@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cairn"
+version = "0.1.0"
+description = "Tooling and design standard for hybrid human/AI research collaboration"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Cairn contributors" }]
+dependencies = [
+  "pydantic>=2.6",
+  "typer>=0.12",
+  "pyyaml>=6.0",
+  "ruamel.yaml>=0.18",
+  "gitpython>=3.1",
+  "jinja2>=3.1",
+  "rich>=13.7",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-cov",
+  "ruff>=0.5",
+  "mypy>=1.10",
+]
+cookiecutter = ["cookiecutter>=2.6"]
+
+[project.scripts]
+cairn = "cairn.cli.app:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cairn"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/cairn/cli/*.py" = ["B008"]  # typer.Option() in defaults is idiomatic
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
