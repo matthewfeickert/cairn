@@ -64,15 +64,26 @@ cairn/
 
 ## Roadmap
 
-Implementation follows the [build path](ARCHITECTURE.md) in deliberate phases.
+> **Note on phase numbering.** ARCHITECTURE.md's original Build Path section uses its own phase labels (Phase 0 = discovery, Phase 1 = template, Phase 2 = Python package, …). This roadmap re-groups them around the actual execution plan, so the numbers diverge. The content is what matters; ARCHITECTURE.md is the design document, this section is the live status.
 
 - [x] Design and architecture documented
 - [x] User stories defined
-- [x] **Phase 0/1** — Canonical cairn template (`templates/default/`)
-- [x] **Phase 0/1** — State schemas in Pydantic v2 (`src/cairn/schemas/`)
-- [x] **Phase 0/1** — `cairn init` CLI (US-P-01, US-P-02)
-- [x] **Phase 0/1** — Basic state operations: `cairn collaborator add`, `cairn decision add`, `cairn validate`, `cairn status` (US-P-03 through US-P-06)
-- [ ] **Phase 2** — Meeting import (US-P-07), artifact export (US-P-08), agenda draft (US-P-09)
+- [x] **Phase 0 — Foundation** *(done)*
+  - Canonical cairn template (`templates/default/`)
+  - State schemas in Pydantic v2 (`src/cairn/schemas/`)
+  - `cairn init` (US-P-01, US-P-02)
+  - Basic state operations: `cairn collaborator add`, `cairn decision add`, `cairn validate`, `cairn status` (US-P-03 through US-P-06)
+- [ ] **Phase 1 — Agent skills + supporting commands** *(current)*
+  - Bundled `SKILL.md` files in `templates/default/skills/`
+  - US-A-01: Orient at session start (read PROJECT.md + collaborators.yaml)
+  - US-A-02: Log a finding mid-session (needs Finding format + `cairn finding add`)
+  - US-A-03: Create an exploration branch (needs `cairn branch start` + `branches/README.md` updater)
+  - US-A-04: Mark an action item complete (needs `cairn action add` + `cairn action complete`)
+  - US-A-05: Search prior discussions (local file scan; pure skill)
+- [ ] **Phase 2 — Python package extensions**
+  - Meeting import (US-P-07)
+  - Artifact export — ASTRA / ARA / RO-Crate (US-P-08)
+  - Agenda draft (US-P-09)
 - [ ] **Phase 3** — MCP server alongside the repo
 - [ ] **Phase 4** — Meeting capture (Whisper + pyannote diarization)
 - [ ] **Phase 5** — AI collaborator runtime (literature monitor, etc.)

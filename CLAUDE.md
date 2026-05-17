@@ -20,14 +20,20 @@ Cairn defines a repository structure, file schemas, and conventions for maintain
 
 ## Current phase
 
-Phase 0/1 of the build path (ARCHITECTURE.md §Build Path). Immediate priorities:
+**Phase 0 (Foundation) is complete.** Shipped: the canonical template at `templates/default/`, Pydantic v2 schemas for the five state files, and the CLI commands `cairn init`, `cairn collaborator add`, `cairn decision add`, `cairn validate`, `cairn status` (US-P-01 through US-P-06). 64 tests passing. See `docs/decisions/` for ADRs locking in YAML library, git library, template engine, and ID/timestamp conventions.
 
-1. **Canonical cairn template** at `templates/default/` — the directory tree, state file skeletons, PROJECT.md template.
-2. **State schemas as Pydantic models** — decisions, open questions, action items, goals, collaborators. These are the contract.
-3. **`cairn init`** — US-P-01 and US-P-02.
-4. **Basic state operations** — US-P-03 (add collaborator), US-P-04 (record decision), US-P-05 (validate), US-P-06 (status).
+**Phase 1 — Agent skills + supporting commands — is the current focus.** Goal: make a cairn useful inside a Claude Code session by bundling skills that read and write through the structure Phase 0 built. Targets:
 
-Out of scope until later phases: MCP server, meeting capture, AI collaborator runtime, voice mode. Don't speculatively scaffold these — they have their own design considerations and will be cleaner if built later.
+- Bundled `SKILL.md` files in `templates/default/skills/` so newly-scaffolded cairns ship with them.
+- US-A-01: Orient at session start — agent reads `PROJECT.md` + `state/collaborators.yaml`, identifies the user, produces a coherent summary citing recent decisions and open questions.
+- US-A-02: Log a finding mid-session — needs a Finding format (file under `knowledge/findings/<date>-<slug>.md` with frontmatter) and a `cairn finding add` command.
+- US-A-03: Create an exploration branch — `cairn branch start <description>` creates `<user-id>/<kebab>` branch, updates `branches/README.md`, writes a branch manifest.
+- US-A-04: Mark an action item complete — needs `cairn action add` and `cairn action complete <id>` (the `ActionItem` schema already exists from Phase 0).
+- US-A-05: Search prior discussions — pure local file scan; can ship as a skill alone.
+
+Note on phase numbering: ARCHITECTURE.md §Build Path uses different phase labels (Phase 0 = discovery, Phase 1 = template, Phase 2 = Python package). This document and the README track the actual execution plan, which re-groups them. The content is the same; only the numbering differs.
+
+Out of scope until later phases: MCP server (Phase 3), meeting capture automation (Phase 4), AI collaborator runtime with scheduling/permissions enforcement (Phase 5), voice mode (Phase 6), artifact export (Phase 2 / US-P-08), meeting import (Phase 2 / US-P-07). Don't speculatively scaffold these.
 
 ## Development conventions
 
