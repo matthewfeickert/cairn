@@ -1,0 +1,134 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 680" font-family="ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif">
+  <defs>
+    <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5C5249"/>
+    </marker>
+    <marker id="arrow3-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#A85C3D"/>
+    </marker>
+    <style>
+      .label { font-size: 12px; fill: #1A1714; }
+      .small { font-size: 10px; fill: #5C5249; }
+      .mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; fill: #1A1714; }
+      .mono-muted { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; fill: #5C5249; }
+      .title { font-size: 14px; fill: #1A1714; font-weight: 600; }
+      .caption { font-size: 12px; fill: #5C5249; font-style: italic; }
+      .section { font-size: 11px; fill: #5C5249; font-weight: 600; letter-spacing: 0.5px; }
+      .box { fill: #FAF6F0; stroke: #1A1714; stroke-width: 1.4; }
+      .box-accent { fill: #FDF4EE; stroke: #A85C3D; stroke-width: 1.4; }
+      .box-soft { fill: #E8DDD0; stroke: #5C5249; stroke-width: 1; }
+      .divider { stroke: #D4C9BC; stroke-width: 1; }
+      .arrow { stroke: #5C5249; stroke-width: 1.3; fill: none; }
+      .arrow-accent { stroke: #A85C3D; stroke-width: 1.3; fill: none; }
+      .arrow-dashed { stroke: #5C5249; stroke-width: 1.3; fill: none; stroke-dasharray: 4 3; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="480" y="32" text-anchor="middle" class="title">Figure 3 — Multi-Client System</text>
+  <text x="480" y="52" text-anchor="middle" class="caption">Human collaborators, AI collaborators, async clients, and capture modules all use the same interface.</text>
+
+  <!-- ============ CENTER: Cairn Core ============ -->
+  <rect x="370" y="260" width="220" height="170" rx="6" class="box-accent"/>
+  <rect x="370" y="260" width="220" height="32" rx="6" fill="#A85C3D"/>
+  <rect x="370" y="282" width="220" height="10" fill="#A85C3D"/>
+  <text x="480" y="281" text-anchor="middle" font-size="13" fill="#FAF6F0" font-weight="600">Cairn Core</text>
+  
+  <text x="385" y="312" class="mono">project repository (git)</text>
+  <text x="385" y="328" class="mono-muted">  state/ knowledge/ skills/</text>
+  <line x1="380" y1="340" x2="580" y2="340" class="divider"/>
+  <text x="385" y="358" class="mono">MCP Server (optional)</text>
+  <text x="385" y="374" class="mono-muted">  semantic tool surface</text>
+  <text x="385" y="390" class="mono-muted">  vector index (derived)</text>
+  <line x1="380" y1="402" x2="580" y2="402" class="divider"/>
+  <text x="385" y="420" class="mono">review queue</text>
+
+  <!-- ============ TOP LEFT: Human collaborators ============ -->
+  <text x="40" y="85" class="section">HUMAN COLLABORATORS</text>
+  <rect x="40" y="100" width="180" height="70" rx="6" class="box"/>
+  <text x="130" y="123" text-anchor="middle" class="label" font-weight="600">Kyle (PI)</text>
+  <line x1="55" y1="135" x2="205" y2="135" class="divider"/>
+  <text x="55" y="152" class="mono">Claude Code</text>
+  <text x="55" y="166" class="mono-muted">on main</text>
+
+  <rect x="40" y="185" width="180" height="70" rx="6" class="box"/>
+  <text x="130" y="208" text-anchor="middle" class="label" font-weight="600">Maria (postdoc)</text>
+  <line x1="55" y1="220" x2="205" y2="220" class="divider"/>
+  <text x="55" y="237" class="mono">Claude Code</text>
+  <text x="55" y="251" class="mono-muted">on maria/lit</text>
+
+  <rect x="40" y="270" width="180" height="70" rx="6" class="box"/>
+  <text x="130" y="293" text-anchor="middle" class="label" font-weight="600">Pedro (PhD)</text>
+  <line x1="55" y1="305" x2="205" y2="305" class="divider"/>
+  <text x="55" y="322" class="mono">Claude Code</text>
+  <text x="55" y="336" class="mono-muted">on pedro/resample</text>
+
+  <!-- ============ TOP RIGHT: AI collaborators ============ -->
+  <text x="740" y="85" class="section">AI COLLABORATORS</text>
+  <rect x="740" y="100" width="180" height="70" rx="6" class="box-accent"/>
+  <text x="830" y="123" text-anchor="middle" class="label" font-weight="600">Literature Monitor</text>
+  <line x1="755" y1="135" x2="905" y2="135" class="divider"/>
+  <text x="755" y="152" class="mono">scheduled agent</text>
+  <text x="755" y="166" class="mono-muted">writes to lit-monitor/</text>
+
+  <rect x="740" y="185" width="180" height="70" rx="6" class="box-accent"/>
+  <text x="830" y="208" text-anchor="middle" class="label" font-weight="600">Critic Agent</text>
+  <line x1="755" y1="220" x2="905" y2="220" class="divider"/>
+  <text x="755" y="237" class="mono">on-demand agent</text>
+  <text x="755" y="251" class="mono-muted">reviews open decisions</text>
+
+  <!-- ============ BOTTOM LEFT: Async clients ============ -->
+  <text x="40" y="430" class="section">ASYNC CLIENTS</text>
+  <rect x="40" y="445" width="180" height="70" rx="6" class="box"/>
+  <text x="130" y="468" text-anchor="middle" class="label" font-weight="600">Slack Bot</text>
+  <line x1="55" y1="480" x2="205" y2="480" class="divider"/>
+  <text x="55" y="497" class="mono">chat interface</text>
+  <text x="55" y="511" class="mono-muted">queries via MCP</text>
+
+  <rect x="40" y="530" width="180" height="70" rx="6" class="box"/>
+  <text x="130" y="553" text-anchor="middle" class="label" font-weight="600">Web Dashboard</text>
+  <line x1="55" y1="565" x2="205" y2="565" class="divider"/>
+  <text x="55" y="582" class="mono">read-only viewer</text>
+  <text x="55" y="596" class="mono-muted">branches, status</text>
+
+  <!-- ============ BOTTOM RIGHT: Capture modules ============ -->
+  <text x="740" y="430" class="section">CAPTURE MODULES</text>
+  <rect x="740" y="445" width="180" height="70" rx="6" class="box"/>
+  <text x="830" y="468" text-anchor="middle" class="label" font-weight="600">Meeting Capture</text>
+  <line x1="755" y1="480" x2="905" y2="480" class="divider"/>
+  <text x="755" y="497" class="mono">whisper + pyannote</text>
+  <text x="755" y="511" class="mono-muted">submits transcript</text>
+
+  <rect x="740" y="530" width="180" height="70" rx="6" class="box"/>
+  <text x="830" y="553" text-anchor="middle" class="label" font-weight="600">Zoom AI Import</text>
+  <line x1="755" y1="565" x2="905" y2="565" class="divider"/>
+  <text x="755" y="582" class="mono">summary parser</text>
+  <text x="755" y="596" class="mono-muted">populates store</text>
+
+  <!-- ============ ARROWS to core ============ -->
+  <!-- Human collaborators -->
+  <path d="M 220 135 L 370 290" class="arrow" marker-end="url(#arrow3)" marker-start="url(#arrow3)"/>
+  <path d="M 220 220 L 370 320" class="arrow" marker-end="url(#arrow3)" marker-start="url(#arrow3)"/>
+  <path d="M 220 305 L 370 350" class="arrow" marker-end="url(#arrow3)" marker-start="url(#arrow3)"/>
+
+  <!-- AI collaborators - dashed because writes go to review queue -->
+  <path d="M 740 135 L 590 295" class="arrow-accent" marker-end="url(#arrow3-accent)" marker-start="url(#arrow3-accent)"/>
+  <path d="M 740 220 L 590 325" class="arrow-accent" marker-end="url(#arrow3-accent)" marker-start="url(#arrow3-accent)"/>
+
+  <!-- Slack/Dashboard -->
+  <path d="M 220 480 L 370 380" class="arrow" marker-end="url(#arrow3)" marker-start="url(#arrow3)"/>
+  <path d="M 220 565 L 370 410" class="arrow" marker-end="url(#arrow3)"/>
+
+  <!-- Capture modules -->
+  <path d="M 740 480 L 590 360" class="arrow" marker-end="url(#arrow3)"/>
+  <path d="M 740 565 L 590 400" class="arrow" marker-end="url(#arrow3)"/>
+
+  <!-- ============ Legend ============ -->
+  <g transform="translate(370, 555)">
+    <text x="0" y="0" class="section">LEGEND</text>
+    <line x1="0" y1="20" x2="30" y2="20" class="arrow" marker-end="url(#arrow3)" marker-start="url(#arrow3)"/>
+    <text x="40" y="24" class="small">direct repo read/write (humans, capture)</text>
+    <line x1="0" y1="42" x2="30" y2="42" class="arrow-accent" marker-end="url(#arrow3-accent)" marker-start="url(#arrow3-accent)"/>
+    <text x="40" y="46" class="small">writes via review queue (AI collaborators)</text>
+  </g>
+</svg>

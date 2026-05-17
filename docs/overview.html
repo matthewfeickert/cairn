@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cairn — An Agent-Native Research Collaboration Framework</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,300..900,0..100,0..1&family=Newsreader:opsz,wght@6..72,200..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FAF6F0;
+    --bg-tint: #F4ECDF;
+    --bg-sand: #E8DDD0;
+    --ink: #1A1714;
+    --ink-muted: #5C5249;
+    --ink-fade: #8B8275;
+    --accent: #A85C3D;
+    --accent-pale: #FDF4EE;
+    --rule: #D4C9BC;
+    --display: 'Fraunces', ui-serif, Georgia, serif;
+    --body: 'Newsreader', ui-serif, 'Iowan Old Style', Georgia, serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 18px;
+    line-height: 1.65;
+    font-feature-settings: "kern", "liga", "onum";
+  }
+
+  ::selection { background: var(--accent); color: var(--bg); }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  .wide {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+
+  /* ============ HERO ============ */
+  .hero {
+    padding: 120px 32px 80px;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: "";
+    position: absolute;
+    top: 20px; right: 40px;
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 28px;
+  }
+
+  .hero h1 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-variation-settings: "opsz" 144, "SOFT" 30;
+    font-size: clamp(72px, 14vw, 168px);
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+    margin: 0 0 32px 0;
+    color: var(--ink);
+  }
+
+  .hero h1 .dot {
+    color: var(--accent);
+  }
+
+  .hero-sub {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(22px, 3vw, 32px);
+    line-height: 1.3;
+    color: var(--ink-muted);
+    max-width: 640px;
+    margin: 0 0 48px 0;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-fade);
+  }
+
+  .hero-meta strong {
+    display: block;
+    color: var(--ink);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    font-size: 14px;
+    margin-top: 4px;
+    font-family: var(--body);
+  }
+
+  /* ============ SECTIONS ============ */
+  section {
+    padding: 80px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .section-number {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-variation-settings: "opsz" 72, "SOFT" 20;
+    font-size: clamp(36px, 5vw, 54px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 40px 0;
+    color: var(--ink);
+  }
+
+  h3 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-variation-settings: "opsz" 36;
+    font-size: 26px;
+    line-height: 1.2;
+    margin: 48px 0 16px 0;
+    color: var(--ink);
+  }
+
+  h4 {
+    font-family: var(--body);
+    font-weight: 600;
+    font-size: 18px;
+    margin: 32px 0 12px 0;
+    color: var(--ink);
+  }
+
+  p {
+    margin: 0 0 20px 0;
+    text-wrap: pretty;
+  }
+
+  p.lead {
+    font-size: 22px;
+    line-height: 1.5;
+    color: var(--ink);
+    font-weight: 300;
+    margin-bottom: 32px;
+  }
+
+  /* Drop cap on first paragraph of intro section */
+  .has-dropcap > p:first-of-type::first-letter {
+    font-family: var(--display);
+    font-weight: 400;
+    font-variation-settings: "opsz" 144;
+    float: left;
+    font-size: 88px;
+    line-height: 0.85;
+    padding: 8px 12px 0 0;
+    color: var(--accent);
+  }
+
+  em { font-style: italic; }
+  strong { font-weight: 600; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: var(--bg-sand);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  /* ============ PRINCIPLE GRID ============ */
+  .principles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    margin: 48px 0;
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+
+  .principle {
+    padding: 32px;
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+    background: var(--bg);
+  }
+
+  .principle-num {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: 48px;
+    line-height: 1;
+    color: var(--accent);
+    margin-bottom: 16px;
+    font-variation-settings: "opsz" 72;
+  }
+
+  .principle h4 {
+    margin: 0 0 12px 0;
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 500;
+  }
+
+  .principle p {
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    margin: 0;
+  }
+
+  @media (max-width: 640px) {
+    .principles { grid-template-columns: 1fr; }
+  }
+
+  /* ============ FIGURES ============ */
+  figure {
+    margin: 56px 0;
+  }
+
+  figure svg {
+    width: 100%;
+    height: auto;
+    background: var(--bg);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 16px;
+    display: block;
+  }
+
+  figcaption {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin-top: 16px;
+    line-height: 1.5;
+    text-align: center;
+  }
+
+  figcaption strong {
+    font-style: normal;
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  /* ============ CALLOUT ============ */
+  .callout {
+    background: var(--bg-tint);
+    border-left: 3px solid var(--accent);
+    padding: 28px 32px;
+    margin: 40px 0;
+    font-family: var(--display);
+    font-size: 22px;
+    line-height: 1.4;
+    font-style: italic;
+    font-weight: 300;
+    color: var(--ink);
+  }
+
+  .callout-attribution {
+    display: block;
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-fade);
+    font-style: normal;
+  }
+
+  /* ============ TIMELINE ============ */
+  .timeline {
+    margin: 48px 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .phase {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 32px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .phase-num {
+    font-family: var(--display);
+    font-weight: 300;
+    font-size: 32px;
+    color: var(--accent);
+    font-variation-settings: "opsz" 48;
+    line-height: 1;
+  }
+
+  .phase-num small {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-fade);
+    margin-top: 8px;
+    font-weight: 400;
+  }
+
+  .phase-content h4 {
+    margin: 0 0 8px 0;
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 22px;
+  }
+
+  .phase-content p {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 640px) {
+    .phase { grid-template-columns: 1fr; gap: 8px; }
+  }
+
+  /* ============ DESIGN DECISIONS ============ */
+  .decision {
+    margin: 40px 0;
+    padding-left: 24px;
+    border-left: 2px solid var(--bg-sand);
+  }
+
+  .decision h4 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 20px;
+    margin: 0 0 8px 0;
+    color: var(--ink);
+  }
+
+  .decision p {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  /* ============ FOOTER ============ */
+  footer {
+    padding: 80px 32px 60px;
+    text-align: center;
+  }
+
+  footer p {
+    font-family: var(--display);
+    font-style: italic;
+    color: var(--ink-fade);
+    font-size: 15px;
+    max-width: 540px;
+    margin: 0 auto;
+  }
+
+  .stone-mark {
+    margin: 0 auto 32px;
+    width: 64px;
+    height: 64px;
+    display: block;
+  }
+
+  /* ============ PRINT ============ */
+  @media print {
+    body { font-size: 11pt; }
+    .hero { padding: 40px 0; }
+    .hero h1 { font-size: 72pt; }
+    section { padding: 30px 0; page-break-inside: avoid; }
+    figure { page-break-inside: avoid; }
+    .callout { page-break-inside: avoid; }
+  }
+
+  /* ============ Inline SVG figure sizing ============ */
+  figure.fig-wide svg { max-width: 100%; }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Design Overview · Draft</div>
+    <h1>Cairn<span class="dot">.</span></h1>
+    <p class="hero-sub">An agent-native framework for distributed research collaboration — where humans and AI contribute to a shared, durable project memory.</p>
+    <div class="hero-meta">
+      <div>Status<strong>Architecture draft</strong></div>
+      <div>Substrate<strong>Git repository</strong></div>
+      <div>Approach<strong>Local-first, inspectable</strong></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ §1 WHAT ============ -->
+<section>
+  <div class="container has-dropcap">
+    <div class="section-number">§1 — What is Cairn</div>
+    <h2>A shared collaborator for the research group.</h2>
+
+    <p>Cairn is a tool and design standard that lets a research group's collective thinking accumulate over time, become queryable, and remain visible across asynchronous work and changing personnel. It defines repository conventions, file schemas, and patterns for collaboration, and provides a Python package for scaffolding and managing project instances. It supports parallel lines of inquiry through branching and treats human and AI contributors uniformly within the same workflow.</p>
+
+    <p>The name borrows from the stone markers travelers build along trails. Each person who passes adds to the pile. The cairn persists for those who follow, points to the path, and survives the absence of any individual builder. Its construction is collective; its inspection is open; its purpose is to make the group's accumulated knowledge available to anyone walking the route, including the people who will come later.</p>
+
+    <p>The word carries over: a research project's repository, organized following Cairn's conventions, is itself <em>a cairn</em>. There is one cairn per project. Cairn — capitalized — is the framework that defines what a cairn looks like and provides the tooling to create one.</p>
+
+    <div class="callout">
+      Research groups already have collective knowledge. It lives in meetings, side conversations, individual memories, scattered documents, and the slow accretion of folklore among long-tenured members. Cairn is an attempt to make that substrate explicit, durable, and shared — without burdening the group with overhead that the AI itself can absorb.
+    </div>
+
+    <h3>What it enables</h3>
+    <p>A collaborator who missed Tuesday's meeting can ask the agent what was discussed, what decisions were made, and whether their concern was raised. A new postdoc joining six months in can ask why the project went one direction rather than another and get an answer with citations to the meetings where it was decided. A student exploring an alternative approach can do so on a branch, without disrupting the canonical direction, and can later propose merging their finding back. An AI collaborator can monitor recent literature in the background and surface relevant work without anyone having to ask.</p>
+
+    <p>What ties all of these together is a single architectural commitment: the group's shared memory lives in one inspectable, versioned place, and every component — human or AI, synchronous or async — interacts with it through a uniform interface.</p>
+  </div>
+</section>
+
+<!-- ============ §2 PRINCIPLES ============ -->
+<section>
+  <div class="container">
+    <div class="section-number">§2 — Principles</div>
+    <h2>Five commitments that shape every design choice.</h2>
+
+    <div class="principles">
+      <div class="principle">
+        <div class="principle-num">01</div>
+        <h4>The repository is the source of truth.</h4>
+        <p>All canonical project state lives in a git repository. Every other component is a derived view or interface layer.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">02</div>
+        <h4>Derived systems are disposable.</h4>
+        <p>Vector indices, MCP servers, dashboards — all replaceable without compromising the substrate. The project survives them.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">03</div>
+        <h4>Uniform collaborator abstraction.</h4>
+        <p>Human and AI collaborators use the same interfaces. Identity differs; mechanism does not.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">04</div>
+        <h4>Branches as first-class.</h4>
+        <p>Parallel exploration is encouraged. Merges are explicit, reviewed events that themselves become artifacts.</p>
+      </div>
+      <div class="principle">
+        <div class="principle-num">05</div>
+        <h4>Layered consumption, layered distribution.</h4>
+        <p>Skills replicate locally. Knowledge and state are read via tools. Each layer is distributed appropriately for its access pattern.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §3 ARCHITECTURE ============ -->
+<section>
+  <div class="wide">
+    <div class="container" style="padding:0">
+      <div class="section-number">§3 — Architecture</div>
+      <h2>The simplest version is the most important.</h2>
+
+      <p>Cairn's architecture is layered so that each layer earns its complexity. The base — a cairn itself — is a git repository organized following Cairn's conventions. Everything else is optional augmentation that can be added when the underlying friction is felt, and removed without breaking what came before. This is the architectural commitment that gives the system its durability.</p>
+    </div>
+
+    <h3 style="margin-top:64px">3.1 — Git-native, by itself</h3>
+    <div class="container" style="padding:0">
+      <p>In the simplest configuration, a cairn <em>is</em> the entire system — just a git repository. Each collaborator clones it locally. Their Claude Code session reads the repo from disk: a small orientation file tells the agent where things live; from there it loads what it needs. Meeting transcripts, decisions, findings, literature notes, and provenance artifacts (model cards, RO-Crates, AI usage records) all sit as plain files. Writes are normal git operations — commits, pull requests, code review. Permissions and history are GitHub's.</p>
+
+      <p>This is enough for a surprisingly long time. A small research group with a year of meeting notes can run on nothing but this and find the agent extraordinarily capable, because Claude is good at navigating well-organized text. No services to run; nothing to maintain.</p>
+    </div>
+
+    <figure class="fig-wide">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 580" style="font-family: var(--body)">
+        <defs>
+          <marker id="ar1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#5C5249"/>
+          </marker>
+        </defs>
+        <text x="450" y="32" text-anchor="middle" font-size="14" fill="#1A1714" font-weight="600">Figure 1 — Git-Native Architecture</text>
+        <text x="450" y="52" text-anchor="middle" font-size="12" fill="#5C5249" font-style="italic">The repository is the entire system. Each collaborator clones it locally.</text>
+        <rect x="310" y="200" width="280" height="258" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <rect x="310" y="200" width="280" height="32" rx="6" fill="#1A1714"/>
+        <rect x="310" y="222" width="280" height="10" fill="#1A1714"/>
+        <text x="450" y="221" text-anchor="middle" font-size="13" fill="#FAF6F0" font-weight="600">project repository (git)</text>
+        <g font-family="'JetBrains Mono', monospace" font-size="11">
+          <text x="328" y="252" fill="#1A1714">project-name/</text>
+          <text x="340" y="270" fill="#5C5249">├── PROJECT.md</text>
+          <text x="340" y="286" fill="#5C5249">├── state/</text>
+          <text x="352" y="302" fill="#1A1714">│   ├── decisions.yaml</text>
+          <text x="352" y="318" fill="#1A1714">│   ├── open_questions.yaml</text>
+          <text x="352" y="334" fill="#1A1714">│   ├── action_items.yaml</text>
+          <text x="352" y="350" fill="#1A1714">│   └── collaborators.yaml</text>
+          <text x="340" y="366" fill="#5C5249">├── knowledge/</text>
+          <text x="352" y="382" fill="#1A1714">│   ├── meetings/</text>
+          <text x="352" y="398" fill="#1A1714">│   ├── findings/</text>
+          <text x="352" y="414" fill="#1A1714">│   ├── literature/</text>
+          <text x="352" y="430" fill="#1A1714">│   └── provenance/</text>
+          <text x="340" y="448" fill="#5C5249">├── skills/</text>
+        </g>
+        <rect x="50" y="100" width="200" height="100" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="150" y="125" text-anchor="middle" font-size="13" fill="#1A1714" font-weight="600">Kyle (PI)</text>
+        <line x1="70" y1="138" x2="230" y2="138" stroke="#D4C9BC"/>
+        <g font-family="'JetBrains Mono', monospace" font-size="11">
+          <text x="70" y="156" fill="#1A1714">local repo clone</text>
+          <text x="70" y="174" fill="#1A1714">Claude Code session</text>
+          <text x="70" y="192" fill="#5C5249">↳ reads files directly</text>
+        </g>
+        <rect x="650" y="100" width="200" height="100" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="750" y="125" text-anchor="middle" font-size="13" fill="#1A1714" font-weight="600">Maria (postdoc)</text>
+        <line x1="670" y1="138" x2="830" y2="138" stroke="#D4C9BC"/>
+        <g font-family="'JetBrains Mono', monospace" font-size="11">
+          <text x="670" y="156" fill="#1A1714">local repo clone</text>
+          <text x="670" y="174" fill="#1A1714">Claude Code session</text>
+          <text x="670" y="192" fill="#5C5249">↳ on branch maria/lit</text>
+        </g>
+        <rect x="350" y="490" width="200" height="80" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="450" y="515" text-anchor="middle" font-size="13" fill="#1A1714" font-weight="600">Pedro (PhD student)</text>
+        <line x1="370" y1="528" x2="530" y2="528" stroke="#D4C9BC"/>
+        <g font-family="'JetBrains Mono', monospace" font-size="11">
+          <text x="370" y="546" fill="#1A1714">local repo clone</text>
+          <text x="370" y="564" fill="#1A1714">Claude Code session</text>
+        </g>
+        <path d="M 250 165 C 290 175 305 195 320 215" stroke="#5C5249" stroke-width="1.4" fill="none" marker-end="url(#ar1)" marker-start="url(#ar1)"/>
+        <path d="M 650 165 C 615 175 595 195 580 215" stroke="#5C5249" stroke-width="1.4" fill="none" marker-end="url(#ar1)" marker-start="url(#ar1)"/>
+        <path d="M 450 490 L 450 466" stroke="#5C5249" stroke-width="1.4" fill="none" marker-end="url(#ar1)" marker-start="url(#ar1)"/>
+        <text x="222" y="200" font-size="11" fill="#5C5249" font-style="italic">git pull / push</text>
+        <text x="610" y="200" text-anchor="end" font-size="11" fill="#5C5249" font-style="italic">git pull / push</text>
+        <text x="475" y="475" font-size="11" fill="#5C5249" font-style="italic">git pull / push</text>
+      </svg>
+      <figcaption><strong>Figure 1.</strong> The minimal configuration. No services, no MCP, no derived stores — just a repo and local clones.</figcaption>
+    </figure>
+
+    <h3 style="margin-top:64px">3.2 — With MCP, when needed</h3>
+    <div class="container" style="padding:0">
+      <p>As the project grows, two kinds of friction emerge. Searching across many meeting notes becomes slow. Semantic queries — "find prior discussions related to this new finding" — start needing more than direct file reads. The response is to add an MCP server alongside the repo: it reads from the repo, maintains a derived vector index, and exposes curated semantic tools to client agents. Tool names are chosen for the lab's actual queries (<code>get_decisions_about</code>, <code>find_related_prior_discussion</code>) rather than as generic search.</p>
+
+      <p>Critically, this is additive. The repo remains the source of truth. The MCP server can be added, replaced, or removed without altering the substrate.</p>
+    </div>
+
+    <figure class="fig-wide">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620" style="font-family: var(--body)">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#5C5249"/>
+          </marker>
+          <marker id="ar2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#A85C3D"/>
+          </marker>
+        </defs>
+        <text x="450" y="32" text-anchor="middle" font-size="14" fill="#1A1714" font-weight="600">Figure 2 — With MCP Server (Optional Augmentation)</text>
+        <text x="450" y="52" text-anchor="middle" font-size="12" fill="#5C5249" font-style="italic">The repo remains source of truth. The MCP server is a read-derived query layer.</text>
+        <rect x="320" y="230" width="260" height="170" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <rect x="320" y="230" width="260" height="32" rx="6" fill="#1A1714"/>
+        <rect x="320" y="252" width="260" height="10" fill="#1A1714"/>
+        <text x="450" y="251" text-anchor="middle" font-size="13" fill="#FAF6F0" font-weight="600">project repository (git)</text>
+        <g font-family="'JetBrains Mono', monospace" font-size="11">
+          <text x="338" y="282" fill="#5C5249">state/</text>
+          <text x="450" y="282" fill="#5C5249">knowledge/</text>
+          <text x="338" y="302" fill="#1A1714">decisions.yaml</text>
+          <text x="450" y="302" fill="#1A1714">meetings/</text>
+          <text x="338" y="320" fill="#1A1714">open_questions...</text>
+          <text x="450" y="320" fill="#1A1714">findings/</text>
+          <text x="338" y="338" fill="#1A1714">action_items...</text>
+          <text x="450" y="338" fill="#1A1714">literature/</text>
+          <text x="450" y="356" fill="#1A1714">provenance/</text>
+          <text x="338" y="360" fill="#5C5249">skills/</text>
+          <text x="338" y="378" fill="#1A1714">SKILL.md files</text>
+        </g>
+        <rect x="320" y="440" width="260" height="140" rx="6" fill="#FDF4EE" stroke="#A85C3D" stroke-width="1.4"/>
+        <rect x="320" y="440" width="260" height="32" rx="6" fill="#A85C3D"/>
+        <rect x="320" y="462" width="260" height="10" fill="#A85C3D"/>
+        <text x="450" y="461" text-anchor="middle" font-size="13" fill="#FAF6F0" font-weight="600">MCP Server (derived)</text>
+        <g font-family="'JetBrains Mono', monospace" font-size="11">
+          <text x="338" y="492" fill="#1A1714">semantic tool surface:</text>
+          <text x="338" y="510" fill="#5C5249">  search_discussions()</text>
+          <text x="338" y="526" fill="#5C5249">  get_decisions_about()</text>
+          <text x="338" y="542" fill="#5C5249">  find_related_prior()</text>
+          <text x="338" y="558" fill="#5C5249">  + vector index over repo</text>
+          <text x="338" y="574" fill="#5C5249">  + rebuilt on commits</text>
+        </g>
+        <path d="M 450 440 L 450 400" stroke="#A85C3D" stroke-width="1.4" fill="none" marker-end="url(#ar2a)"/>
+        <text x="460" y="425" font-size="11" fill="#A85C3D" font-style="italic">reads from</text>
+        <rect x="40" y="140" width="220" height="120" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="150" y="165" text-anchor="middle" font-size="13" fill="#1A1714" font-weight="600">Kyle (PI)</text>
+        <line x1="60" y1="178" x2="240" y2="178" stroke="#D4C9BC"/>
+        <g font-family="'JetBrains Mono', monospace" font-size="11">
+          <text x="60" y="196" fill="#1A1714">local repo clone</text>
+          <text x="60" y="214" fill="#1A1714">Claude Code</text>
+        </g>
+        <text x="60" y="234" font-size="11" fill="#5C5249" font-style="italic">direct file access for</text>
+        <text x="60" y="250" font-size="11" fill="#5C5249" font-style="italic">reads and writes</text>
+        <rect x="640" y="140" width="220" height="120" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="750" y="165" text-anchor="middle" font-size="13" fill="#1A1714" font-weight="600">Maria (postdoc)</text>
+        <line x1="660" y1="178" x2="840" y2="178" stroke="#D4C9BC"/>
+        <g font-family="'JetBrains Mono', monospace" font-size="11">
+          <text x="660" y="196" fill="#1A1714">local repo clone</text>
+          <text x="660" y="214" fill="#1A1714">Claude Code</text>
+        </g>
+        <text x="660" y="234" font-size="11" fill="#5C5249" font-style="italic">+ MCP tools for</text>
+        <text x="660" y="250" font-size="11" fill="#5C5249" font-style="italic">semantic queries</text>
+        <path d="M 260 200 L 320 280" stroke="#5C5249" stroke-width="1.4" fill="none" marker-end="url(#ar2)" marker-start="url(#ar2)"/>
+        <text x="278" y="225" font-size="11" fill="#5C5249" font-style="italic">git pull/push</text>
+        <path d="M 640 200 L 580 280" stroke="#5C5249" stroke-width="1.4" fill="none" marker-end="url(#ar2)" marker-start="url(#ar2)"/>
+        <text x="585" y="225" font-size="11" fill="#5C5249" font-style="italic">git pull/push</text>
+        <path d="M 640 230 C 600 380 580 460 580 490" stroke="#A85C3D" stroke-width="1.4" fill="none" marker-end="url(#ar2a)" marker-start="url(#ar2a)"/>
+        <text x="600" y="395" font-size="11" fill="#A85C3D" font-style="italic">MCP tool calls</text>
+      </svg>
+      <figcaption><strong>Figure 2.</strong> Adding MCP introduces semantic query capability without compromising the substrate. The repo remains canonical.</figcaption>
+    </figure>
+
+    <h3 style="margin-top:64px">3.3 — The full ecology of clients</h3>
+    <div class="container" style="padding:0">
+      <p>Once a core exists, many kinds of clients can interact with it. Human collaborators with Claude Code on their laptops. AI collaborators like a literature monitor running on a schedule. A Slack bot for chat-based queries from a phone. A web dashboard visualizing active branches. A meeting capture module ingesting audio and submitting structured transcripts.</p>
+
+      <p>The architecture is intentionally agnostic about which clients exist. New ones are added by writing modules that follow the same interface conventions. Nothing in the substrate has to change to accommodate them.</p>
+    </div>
+
+    <figure class="fig-wide">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 680" style="font-family: var(--body)">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#5C5249"/>
+          </marker>
+          <marker id="ar3a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#A85C3D"/>
+          </marker>
+        </defs>
+        <text x="480" y="32" text-anchor="middle" font-size="14" fill="#1A1714" font-weight="600">Figure 3 — Multi-Client System</text>
+        <text x="480" y="52" text-anchor="middle" font-size="12" fill="#5C5249" font-style="italic">Human collaborators, AI collaborators, async clients, and capture modules — all using the same interface.</text>
+        <rect x="370" y="260" width="220" height="170" rx="6" fill="#FDF4EE" stroke="#A85C3D" stroke-width="1.4"/>
+        <rect x="370" y="260" width="220" height="32" rx="6" fill="#A85C3D"/>
+        <rect x="370" y="282" width="220" height="10" fill="#A85C3D"/>
+        <text x="480" y="281" text-anchor="middle" font-size="13" fill="#FAF6F0" font-weight="600">Cairn Core</text>
+        <g font-family="'JetBrains Mono', monospace" font-size="10">
+          <text x="385" y="312" fill="#1A1714">project repository (git)</text>
+          <text x="385" y="328" fill="#5C5249">  state/ knowledge/ skills/</text>
+        </g>
+        <line x1="380" y1="340" x2="580" y2="340" stroke="#D4C9BC"/>
+        <g font-family="'JetBrains Mono', monospace" font-size="10">
+          <text x="385" y="358" fill="#1A1714">MCP Server (optional)</text>
+          <text x="385" y="374" fill="#5C5249">  semantic tool surface</text>
+          <text x="385" y="390" fill="#5C5249">  vector index (derived)</text>
+        </g>
+        <line x1="380" y1="402" x2="580" y2="402" stroke="#D4C9BC"/>
+        <text x="385" y="420" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">review queue</text>
+        <text x="40" y="85" font-size="11" fill="#5C5249" font-weight="600" letter-spacing="0.5">HUMAN COLLABORATORS</text>
+        <rect x="40" y="100" width="180" height="70" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="130" y="123" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Kyle (PI)</text>
+        <line x1="55" y1="135" x2="205" y2="135" stroke="#D4C9BC"/>
+        <text x="55" y="152" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">Claude Code</text>
+        <text x="55" y="166" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">on main</text>
+        <rect x="40" y="185" width="180" height="70" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="130" y="208" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Maria (postdoc)</text>
+        <line x1="55" y1="220" x2="205" y2="220" stroke="#D4C9BC"/>
+        <text x="55" y="237" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">Claude Code</text>
+        <text x="55" y="251" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">on maria/lit</text>
+        <rect x="40" y="270" width="180" height="70" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="130" y="293" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Pedro (PhD)</text>
+        <line x1="55" y1="305" x2="205" y2="305" stroke="#D4C9BC"/>
+        <text x="55" y="322" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">Claude Code</text>
+        <text x="55" y="336" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">on pedro/resample</text>
+        <text x="740" y="85" font-size="11" fill="#5C5249" font-weight="600" letter-spacing="0.5">AI COLLABORATORS</text>
+        <rect x="740" y="100" width="180" height="70" rx="6" fill="#FDF4EE" stroke="#A85C3D" stroke-width="1.4"/>
+        <text x="830" y="123" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Literature Monitor</text>
+        <line x1="755" y1="135" x2="905" y2="135" stroke="#D4C9BC"/>
+        <text x="755" y="152" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">scheduled agent</text>
+        <text x="755" y="166" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">writes to lit-monitor/</text>
+        <rect x="740" y="185" width="180" height="70" rx="6" fill="#FDF4EE" stroke="#A85C3D" stroke-width="1.4"/>
+        <text x="830" y="208" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Critic Agent</text>
+        <line x1="755" y1="220" x2="905" y2="220" stroke="#D4C9BC"/>
+        <text x="755" y="237" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">on-demand agent</text>
+        <text x="755" y="251" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">reviews open decisions</text>
+        <text x="40" y="430" font-size="11" fill="#5C5249" font-weight="600" letter-spacing="0.5">ASYNC CLIENTS</text>
+        <rect x="40" y="445" width="180" height="70" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="130" y="468" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Slack Bot</text>
+        <line x1="55" y1="480" x2="205" y2="480" stroke="#D4C9BC"/>
+        <text x="55" y="497" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">chat interface</text>
+        <text x="55" y="511" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">queries via MCP</text>
+        <rect x="40" y="530" width="180" height="70" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="130" y="553" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Web Dashboard</text>
+        <line x1="55" y1="565" x2="205" y2="565" stroke="#D4C9BC"/>
+        <text x="55" y="582" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">read-only viewer</text>
+        <text x="55" y="596" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">branches, status</text>
+        <text x="740" y="430" font-size="11" fill="#5C5249" font-weight="600" letter-spacing="0.5">CAPTURE MODULES</text>
+        <rect x="740" y="445" width="180" height="70" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="830" y="468" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Meeting Capture</text>
+        <line x1="755" y1="480" x2="905" y2="480" stroke="#D4C9BC"/>
+        <text x="755" y="497" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">whisper + pyannote</text>
+        <text x="755" y="511" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">submits transcript</text>
+        <rect x="740" y="530" width="180" height="70" rx="6" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.4"/>
+        <text x="830" y="553" text-anchor="middle" font-size="12" fill="#1A1714" font-weight="600">Zoom AI Import</text>
+        <line x1="755" y1="565" x2="905" y2="565" stroke="#D4C9BC"/>
+        <text x="755" y="582" font-family="'JetBrains Mono', monospace" font-size="10" fill="#1A1714">summary parser</text>
+        <text x="755" y="596" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">populates store</text>
+        <path d="M 220 135 L 370 290" stroke="#5C5249" stroke-width="1.3" fill="none" marker-end="url(#ar3)" marker-start="url(#ar3)"/>
+        <path d="M 220 220 L 370 320" stroke="#5C5249" stroke-width="1.3" fill="none" marker-end="url(#ar3)" marker-start="url(#ar3)"/>
+        <path d="M 220 305 L 370 350" stroke="#5C5249" stroke-width="1.3" fill="none" marker-end="url(#ar3)" marker-start="url(#ar3)"/>
+        <path d="M 740 135 L 590 295" stroke="#A85C3D" stroke-width="1.3" fill="none" marker-end="url(#ar3a)" marker-start="url(#ar3a)"/>
+        <path d="M 740 220 L 590 325" stroke="#A85C3D" stroke-width="1.3" fill="none" marker-end="url(#ar3a)" marker-start="url(#ar3a)"/>
+        <path d="M 220 480 L 370 380" stroke="#5C5249" stroke-width="1.3" fill="none" marker-end="url(#ar3)" marker-start="url(#ar3)"/>
+        <path d="M 220 565 L 370 410" stroke="#5C5249" stroke-width="1.3" fill="none" marker-end="url(#ar3)"/>
+        <path d="M 740 480 L 590 360" stroke="#5C5249" stroke-width="1.3" fill="none" marker-end="url(#ar3)"/>
+        <path d="M 740 565 L 590 400" stroke="#5C5249" stroke-width="1.3" fill="none" marker-end="url(#ar3)"/>
+        <g transform="translate(370, 555)">
+          <text x="0" y="0" font-size="11" fill="#5C5249" font-weight="600" letter-spacing="0.5">LEGEND</text>
+          <line x1="0" y1="20" x2="30" y2="20" stroke="#5C5249" stroke-width="1.3" marker-end="url(#ar3)" marker-start="url(#ar3)"/>
+          <text x="40" y="24" font-size="10" fill="#5C5249">direct repo read/write (humans, capture)</text>
+          <line x1="0" y1="42" x2="30" y2="42" stroke="#A85C3D" stroke-width="1.3" marker-end="url(#ar3a)" marker-start="url(#ar3a)"/>
+          <text x="40" y="46" font-size="10" fill="#5C5249">writes via review queue (AI collaborators)</text>
+        </g>
+      </svg>
+      <figcaption><strong>Figure 3.</strong> The full ecology. Adding a Slack bot, a literature-monitoring agent, or a meeting capture module is a question of writing the client — not of modifying the substrate.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ §4 BRANCHING ============ -->
+<section>
+  <div class="wide">
+    <div class="container" style="padding:0">
+      <div class="section-number">§4 — Branching</div>
+      <h2>Parallel thinking, made legible.</h2>
+
+      <p>A research group's work is rarely linear. Different members pursue different angles. Some ideas get explored at length before being set aside. Some explorations turn into the main direction. The system should support this naturally — not by hiding it, but by making it explicit.</p>
+
+      <p>Cairn uses git branches as first-class objects. A collaborator (human or AI) creates a branch when they want to explore a line of inquiry. Their findings, proposed decisions, and exploratory work live there without polluting canonical state. The knowledge base — meeting notes, prior findings — is shared across branches; only the interpretive and forward-looking layer diverges. When a branch's work is ready to merge, it goes through a pull request: review, discussion, accept or revise.</p>
+
+      <p>Branches that don't merge aren't failures. An exploratory branch that didn't pan out is itself useful history — a record of what was tried and why it was set aside. The graph of branches over time is a record of how the group reasoned through the project.</p>
+    </div>
+
+    <figure class="fig-wide">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" style="font-family: var(--body)">
+        <text x="480" y="32" text-anchor="middle" font-size="14" fill="#1A1714" font-weight="600">Figure 4 — Branching Workflow</text>
+        <text x="480" y="52" text-anchor="middle" font-size="12" fill="#5C5249" font-style="italic">Parallel lines of inquiry diverge from main; merges are explicit, reviewed events.</text>
+        <text x="100" y="430" font-size="11" fill="#5C5249">Meeting 1</text>
+        <text x="300" y="430" font-size="11" fill="#5C5249">async work</text>
+        <text x="500" y="430" font-size="11" fill="#5C5249">Meeting 2</text>
+        <text x="700" y="430" font-size="11" fill="#5C5249">async work</text>
+        <text x="870" y="430" font-size="11" fill="#5C5249">Meeting 3</text>
+        <line x1="80" y1="440" x2="900" y2="440" stroke="#D4C9BC"/>
+        <text x="490" y="460" text-anchor="middle" font-size="11" fill="#5C5249" font-style="italic">time →</text>
+        <line x1="80" y1="220" x2="900" y2="220" stroke="#1A1714" stroke-width="2.5"/>
+        <text x="40" y="224" font-family="'JetBrains Mono', monospace" font-size="11" fill="#1A1714" font-weight="600">main</text>
+        <circle cx="100" cy="220" r="6" fill="#1A1714"/>
+        <text x="100" y="200" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">meeting notes</text>
+        <circle cx="500" cy="220" r="6" fill="#1A1714"/>
+        <text x="500" y="200" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">meeting notes</text>
+        <circle cx="870" cy="220" r="6" fill="#1A1714"/>
+        <text x="870" y="200" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">meeting notes</text>
+        <circle cx="640" cy="220" r="8" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.8"/>
+        <text x="640" y="200" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">merge</text>
+        <text x="40" y="124" font-family="'JetBrains Mono', monospace" font-size="11" fill="#A85C3D" font-weight="600">kyle/alt-loss</text>
+        <path d="M 200 220 Q 230 120 280 120 L 620 120 Q 640 120 640 220" stroke="#A85C3D" stroke-width="1.8" fill="none"/>
+        <circle cx="280" cy="120" r="5" fill="#A85C3D"/>
+        <text x="280" y="105" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">finding</text>
+        <circle cx="380" cy="120" r="5" fill="#A85C3D"/>
+        <text x="380" y="105" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">finding</text>
+        <circle cx="560" cy="120" r="5" fill="#A85C3D"/>
+        <text x="560" y="105" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">proposed decision</text>
+        <text x="640" y="100" text-anchor="middle" font-size="10" fill="#5C5249" font-style="italic">PR review → merge</text>
+        <text x="40" y="304" font-family="'JetBrains Mono', monospace" font-size="11" fill="#A85C3D" font-weight="600">maria/lit</text>
+        <path d="M 200 220 Q 240 300 300 300 L 900 300" stroke="#A85C3D" stroke-width="1.8" fill="none"/>
+        <circle cx="320" cy="300" r="5" fill="#A85C3D"/>
+        <text x="320" y="322" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">papers added</text>
+        <circle cx="540" cy="300" r="5" fill="#A85C3D"/>
+        <text x="540" y="322" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">findings</text>
+        <circle cx="780" cy="300" r="5" fill="#A85C3D"/>
+        <text x="780" y="322" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" fill="#5C5249">findings</text>
+        <text x="900" y="322" font-size="10" fill="#5C5249" font-style="italic">still active</text>
+        <text x="40" y="384" font-family="'JetBrains Mono', monospace" font-size="11" fill="#5C5249" font-weight="600">lit-monitor (AI)</text>
+        <path d="M 120 220 Q 150 380 220 380 L 900 380" stroke="#5C5249" stroke-width="1.8" fill="none" stroke-dasharray="5 3"/>
+        <circle cx="230" cy="380" r="5" fill="#5C5249"/>
+        <circle cx="380" cy="380" r="5" fill="#5C5249"/>
+        <circle cx="490" cy="380" r="5" fill="#5C5249"/>
+        <circle cx="630" cy="380" r="5" fill="#5C5249"/>
+        <circle cx="780" cy="380" r="5" fill="#5C5249"/>
+        <text x="490" y="402" text-anchor="middle" font-size="10" fill="#5C5249" font-style="italic">automated paper submissions, reviewed in batches</text>
+        <g transform="translate(720, 75)">
+          <circle cx="0" cy="0" r="5" fill="#1A1714"/>
+          <text x="12" y="4" font-size="11" fill="#5C5249">main commit</text>
+          <circle cx="0" cy="18" r="5" fill="#A85C3D"/>
+          <text x="12" y="22" font-size="11" fill="#5C5249">branch contribution</text>
+          <circle cx="0" cy="36" r="8" fill="#FAF6F0" stroke="#1A1714" stroke-width="1.8"/>
+          <text x="12" y="40" font-size="11" fill="#5C5249">merge point</text>
+        </g>
+      </svg>
+      <figcaption><strong>Figure 4.</strong> Branches diverge from main, accumulate contributions, and either merge back through review or remain as exploratory records. Both outcomes are valuable.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ §5 ARTIFACTS ============ -->
+<section>
+  <div class="container">
+    <div class="section-number">§5 — Reproducible Artifacts</div>
+    <h2>Documenting the provenance of AI-assisted research.</h2>
+
+    <p>A cairn captures a project's living state. When findings are ready to be shared externally — a paper with reproducible code, a dataset release, a benchmark submission — they get exported as <em>reproducible research artifacts</em> that document how the work was done, what data and methods were used, and which agents contributed. With AI agents increasingly involved in research, this documentation is becoming non-negotiable: journals, funders, and downstream readers all need to know what AI did and didn't do.</p>
+
+    <p>The standards for this are still emerging and competing. Cairn provides a directory (<code>knowledge/provenance/</code>) where these artifacts live, but defers to existing standards for their internal structure. Two stand out as directly aligned with Cairn's commitments. <strong>ASTRA</strong> (Agentic Schema for Transparent Research and Analysis) — Lanusse &amp; Parker, 2026, Lightcone Research — is an open specification under active development that articulates three properties an analysis must satisfy to be efficiently vetted: <em>provenance-certified</em>, <em>fully observable</em>, and <em>scientifically legible</em>. Like Cairn, it commits to being a specification rather than a platform. <strong>ARA</strong> (Agent-Native Research Artifact) by Liu et al. structures research with cross-layer bindings between claims, code, exploration graph, and evidence, and uses provenance tags to distinguish human-confirmed facts from AI inferences. Broader foundations include <strong>RO-Crate</strong> for JSON-LD packaging, <strong>W3C PROV</strong> for foundational vocabulary, and workflow systems like Snakemake, Nextflow, and REANA for reproducible computational pipelines.</p>
+
+    <p>The separation matters. A cairn's internal structure is optimized for the group's day-to-day collaborators navigating evolving state. A reproducible artifact is crystallized for outside readers and downstream agents trying to reproduce or extend the work. Both rest on the same bet: the substrate should be a specification rather than a platform, so that an ecosystem of tools can grow around it. The transformation between them is itself a meaningful step — where the project decides what part of its accumulated thinking gets fixed for external use.</p>
+  </div>
+</section>
+
+<!-- ============ §6 BUILD PATH ============ -->
+<section>
+  <div class="container">
+    <div class="section-number">§6 — Build Path</div>
+    <h2>Each phase earns its complexity.</h2>
+
+    <p>A persistent risk in projects like this is building infrastructure for problems that haven't been encountered yet. The build path is designed to defer every piece of complexity until friction warrants it — and to make each addition cheap because the layer beneath stays unchanged.</p>
+
+    <div class="timeline">
+      <div class="phase">
+        <div class="phase-num">0<small>week 1-2</small></div>
+        <div class="phase-content">
+          <h4>Discovery</h4>
+          <p>Build the repository structure by hand for one real project. Use it for actual meetings. Refine the schema as friction appears.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">1<small>month 2-3</small></div>
+        <div class="phase-content">
+          <h4>Template</h4>
+          <p>Once the structure is stable, convert to a cookiecutter template for spinning up new projects with one command.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">2<small>month 4+</small></div>
+        <div class="phase-content">
+          <h4>Python package</h4>
+          <p>A thin <code>cairn</code> package providing schema validation, parsers, helpers, and an init command. Codifies what's stable; resists feature creep.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">3<small>—</small></div>
+        <div class="phase-content">
+          <h4>MCP server</h4>
+          <p>A centralized server reading from the repo, maintaining a vector index, exposing semantic tools. Sessions can query the project from anywhere.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">4<small>—</small></div>
+        <div class="phase-content">
+          <h4>Meeting automation</h4>
+          <p>Streaming Whisper transcription, pyannote diarization, voice-identification across meetings. Live transcripts during meetings; speaker-attributed commits within minutes of ending.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">5<small>—</small></div>
+        <div class="phase-content">
+          <h4>AI collaborators</h4>
+          <p>First addition: a literature monitor with its own branch. Evaluate. Add more as warranted.</p>
+        </div>
+      </div>
+      <div class="phase">
+        <div class="phase-num">6<small>long-term</small></div>
+        <div class="phase-content">
+          <h4>Voice mode</h4>
+          <p>Real-time voice participant in meetings, using the same Cairn interface as everything else. Speaks when called on; logs to the same store.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §7 DECISIONS ============ -->
+<section>
+  <div class="container">
+    <div class="section-number">§7 — Design Decisions</div>
+    <h2>Choices worth recording.</h2>
+
+    <p>Several decisions shape the system in ways that aren't obvious from the components alone. Recording them here makes future revision deliberate rather than accidental.</p>
+
+    <div class="decision">
+      <h4>Why git, not a database.</h4>
+      <p>Git already provides versioning, branching, merging, attribution, distributed access, conflict detection, review workflows, and offline capability. Building these on top of a database would be reinventing what exists, less well. A research group's project memory has no requirements that git can't meet.</p>
+    </div>
+
+    <div class="decision">
+      <h4>Why YAML, not JSON.</h4>
+      <p>YAML is human-editable. Researchers will sometimes want to edit state files by hand, and YAML's syntax is friendlier for that. The primary use case is human-readable structured state, not tooling.</p>
+    </div>
+
+    <div class="decision">
+      <h4>Why MCP is optional, not foundational.</h4>
+      <p>A research group with a year of history can run entirely on git-based access. Making MCP optional preserves the survivability of the system: if the MCP ecosystem changes or the server breaks, the project continues working.</p>
+    </div>
+
+    <div class="decision">
+      <h4>Why each AI collaborator has its own identity.</h4>
+      <p>Distinct identities let the group evaluate AI contributions on their own terms, attribute work to specific automated processes, and configure permissions per-agent. It matches the uniform-collaborator principle: AI collaborators are participants, not invocations of a generic tool.</p>
+    </div>
+
+    <div class="decision">
+      <h4>Why a review queue for AI writes.</h4>
+      <p>AI contributions can be valuable and can also be noise. A review queue creates a deliberate moment where humans evaluate what to promote, which both protects canonical state and provides feedback signal for tuning AI collaborators over time.</p>
+    </div>
+
+    <div class="decision">
+      <h4>Why per-project repositories, not a single monorepo.</h4>
+      <p>Projects have their own lifecycles, their own collaborators, and their own access boundaries. Per-project repositories match this. Cross-project capability — a collaborator working on project A asking what's relevant from project B — is achieved by their session being pointed at multiple repos, not by collapsing the structure.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <svg class="stone-mark" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="32" cy="58" rx="4" ry="1.2" fill="#1A1714" opacity="0.18"/>
+    <path d="M 10 52 L 18 46 L 32 44 L 46 46 L 54 52 L 50 58 L 14 58 Z" fill="#5B5F60"/>
+    <path d="M 16 44 L 28 38 L 44 40 L 50 46 L 44 50 L 18 48 Z" fill="#787D7F"/>
+    <path d="M 22 36 L 32 32 L 42 34 L 44 42 L 28 42 L 22 40 Z" fill="#90938F"/>
+    <path d="M 26 28 L 36 26 L 42 32 L 36 36 L 28 34 Z" fill="#A8A99F"/>
+    <path d="M 30 22 L 38 22 L 40 28 L 32 28 Z" fill="#646763"/>
+  </svg>
+  <p>Working draft for discussion. May 2026.</p>
+</footer>
+
+</body>
+</html>

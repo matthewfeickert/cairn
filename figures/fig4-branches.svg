@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" font-family="ui-serif, 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif">
+  <defs>
+    <style>
+      .label { font-size: 12px; fill: #1A1714; }
+      .small { font-size: 11px; fill: #5C5249; }
+      .mono { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; fill: #1A1714; }
+      .mono-muted { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 10px; fill: #5C5249; }
+      .title { font-size: 14px; fill: #1A1714; font-weight: 600; }
+      .caption { font-size: 12px; fill: #5C5249; font-style: italic; }
+      .branch-label { font-size: 11px; fill: #1A1714; font-weight: 600; font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+      .annotation { font-size: 10px; fill: #5C5249; font-style: italic; }
+      .main-line { stroke: #1A1714; stroke-width: 2.5; fill: none; }
+      .branch-line { stroke: #A85C3D; stroke-width: 1.8; fill: none; }
+      .ai-line { stroke: #5C5249; stroke-width: 1.8; fill: none; stroke-dasharray: 5 3; }
+      .commit { fill: #1A1714; stroke: none; }
+      .commit-branch { fill: #A85C3D; stroke: none; }
+      .commit-ai { fill: #5C5249; stroke: none; }
+      .merge { fill: #FAF6F0; stroke: #1A1714; stroke-width: 1.8; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="480" y="32" text-anchor="middle" class="title">Figure 4 — Branching Workflow</text>
+  <text x="480" y="52" text-anchor="middle" class="caption">Parallel lines of inquiry diverge from main; merges are explicit, reviewed events.</text>
+
+  <!-- Time axis labels -->
+  <text x="100" y="430" class="small">Meeting 1</text>
+  <text x="300" y="430" class="small">async work</text>
+  <text x="500" y="430" class="small">Meeting 2</text>
+  <text x="700" y="430" class="small">async work</text>
+  <text x="870" y="430" class="small">Meeting 3</text>
+  <line x1="80" y1="440" x2="900" y2="440" stroke="#D4C9BC" stroke-width="1"/>
+  <text x="490" y="460" text-anchor="middle" class="small" font-style="italic">time →</text>
+
+  <!-- Main branch line -->
+  <line x1="80" y1="220" x2="900" y2="220" class="main-line"/>
+  <text x="40" y="224" class="branch-label">main</text>
+
+  <!-- Main branch commits -->
+  <circle cx="100" cy="220" r="6" class="commit"/>
+  <text x="100" y="200" text-anchor="middle" class="mono-muted">meeting notes</text>
+  
+  <circle cx="500" cy="220" r="6" class="commit"/>
+  <text x="500" y="200" text-anchor="middle" class="mono-muted">meeting notes</text>
+
+  <circle cx="870" cy="220" r="6" class="commit"/>
+  <text x="870" y="200" text-anchor="middle" class="mono-muted">meeting notes</text>
+
+  <!-- Merge points -->
+  <circle cx="640" cy="220" r="8" class="merge"/>
+  <text x="640" y="200" text-anchor="middle" class="mono-muted">merge</text>
+
+  <!-- Branch 1: kyle/alt-loss (above main) -->
+  <text x="40" y="124" class="branch-label" fill="#A85C3D">kyle/alt-loss</text>
+  <path d="M 200 220 Q 230 120 280 120 L 620 120 Q 640 120 640 220" class="branch-line"/>
+  <circle cx="280" cy="120" r="5" class="commit-branch"/>
+  <text x="280" y="105" text-anchor="middle" class="mono-muted">finding</text>
+  <circle cx="380" cy="120" r="5" class="commit-branch"/>
+  <text x="380" y="105" text-anchor="middle" class="mono-muted">finding</text>
+  <circle cx="560" cy="120" r="5" class="commit-branch"/>
+  <text x="560" y="105" text-anchor="middle" class="mono-muted">proposed decision</text>
+  <text x="640" y="100" text-anchor="middle" class="annotation">PR review → merge</text>
+
+  <!-- Branch 2: maria/lit (below main) -->
+  <text x="40" y="304" class="branch-label" fill="#A85C3D">maria/lit</text>
+  <path d="M 200 220 Q 240 300 300 300 L 900 300" class="branch-line"/>
+  <circle cx="320" cy="300" r="5" class="commit-branch"/>
+  <text x="320" y="322" text-anchor="middle" class="mono-muted">papers added</text>
+  <circle cx="540" cy="300" r="5" class="commit-branch"/>
+  <text x="540" y="322" text-anchor="middle" class="mono-muted">findings</text>
+  <circle cx="780" cy="300" r="5" class="commit-branch"/>
+  <text x="780" y="322" text-anchor="middle" class="mono-muted">findings</text>
+  <text x="900" y="322" class="annotation">still active</text>
+
+  <!-- Branch 3: AI literature monitor (below maria) -->
+  <text x="40" y="384" class="branch-label" fill="#5C5249">lit-monitor (AI)</text>
+  <path d="M 120 220 Q 150 380 220 380 L 900 380" class="ai-line"/>
+  <circle cx="230" cy="380" r="5" class="commit-ai"/>
+  <circle cx="380" cy="380" r="5" class="commit-ai"/>
+  <circle cx="490" cy="380" r="5" class="commit-ai"/>
+  <circle cx="630" cy="380" r="5" class="commit-ai"/>
+  <circle cx="780" cy="380" r="5" class="commit-ai"/>
+  <text x="490" y="402" text-anchor="middle" class="annotation">automated paper submissions, reviewed in batches</text>
+
+  <!-- Legend -->
+  <g transform="translate(720, 75)">
+    <circle cx="0" cy="0" r="5" class="commit"/>
+    <text x="12" y="4" class="small">main commit</text>
+    <circle cx="0" cy="18" r="5" class="commit-branch"/>
+    <text x="12" y="22" class="small">branch contribution</text>
+    <circle cx="0" cy="36" r="8" class="merge"/>
+    <text x="12" y="40" class="small">merge point</text>
+  </g>
+</svg>
