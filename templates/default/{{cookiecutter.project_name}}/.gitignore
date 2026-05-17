@@ -1,0 +1,22 @@
+# Cairn — default ignores for a research project repository
+
+# OS / editor cruft
+.DS_Store
+.idea/
+.vscode/
+*~
+*.swp
+
+# Python (if any project tooling lives in-repo)
+__pycache__/
+*.py[cod]
+.venv/
+.pixi/
+*.egg-info/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Local-only data
+/data/local/
+/scratch/
