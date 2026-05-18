@@ -22,7 +22,7 @@ Cairn defines a repository structure, file schemas, and conventions for maintain
 
 **Phase 0 (Foundation) is complete.** Shipped: the canonical template at `templates/default/`, Pydantic v2 schemas for the five state files, and the CLI commands `cairn init`, `cairn collaborator add`, `cairn decision add`, `cairn validate`, `cairn status` (US-P-01 through US-P-06). 64 tests passing. See `docs/decisions/` for ADRs locking in YAML library, git library, template engine, and ID/timestamp conventions.
 
-**Phase 1 (Agent skills + supporting commands) is complete.** Shipped: `cairn branch start`, `cairn action add`, `cairn action complete`, and four bundled Claude Code-style `SKILL.md` files in `templates/default/skills/` (`orient`, `search-history`, `start-branch`, `complete-action`) that ship into newly-scaffolded cairns via `cairn init`. Covers US-A-01, US-A-03, US-A-04, US-A-05. 85 tests passing.
+**Phase 1 (Agent skills + supporting commands) is complete.** Shipped: `cairn branch start`, `cairn branch close`, `cairn action add`, `cairn action complete`, and bundled Claude Code-style `SKILL.md` files in `templates/default/skills/` (`orient`, `search-history`, `start-branch`, `resolve-branch`, `complete-action`, `log-finding`) that ship into newly-scaffolded cairns via `cairn init`. Covers US-A-01, US-A-03, US-A-04, US-A-05, US-A-09 (plus US-A-02 from Phase 2). Branch lifecycle now has both halves — opening and closing — so exploration branches don't accumulate without resolution.
 
 **Phase 2 — Python package extensions — is in progress.** Targets and status:
 
@@ -41,7 +41,7 @@ Carried items that are not blocking a phase but should be picked up when conveni
 
 ## Development conventions
 
-- **Python 3.11+**.
+- **Python 3.10+**.
 - **Environment management**: pixi (preferred — the project lead uses it; tooling that works under pixi will work under uv/conda too).
 - **Schema validation**: Pydantic v2 for state file schemas. Schemas in `src/cairn/schemas/`.
 - **CLI**: Typer.

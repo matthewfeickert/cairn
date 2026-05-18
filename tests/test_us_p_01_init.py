@@ -64,7 +64,14 @@ def test_us_p_01_bundles_skill_files(cwd: Path):
     """Phase 1 skills ship into newly-scaffolded cairns."""
     _invoke_init(cwd)
     skills_dir = cwd / "test-project" / "skills"
-    expected = {"orient", "search-history", "start-branch", "complete-action"}
+    expected = {
+        "orient",
+        "search-history",
+        "start-branch",
+        "complete-action",
+        "log-finding",
+        "resolve-branch",
+    }
     present = {p.name for p in skills_dir.iterdir() if p.is_dir()}
     assert expected <= present, f"missing skills: {expected - present}"
     for name in expected:

@@ -7,7 +7,7 @@ name = "cairn"
 version = "0.1.0"
 description = "Tooling and design standard for hybrid human/AI research collaboration"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.10"
 license = { file = "LICENSE" }
 authors = [{ name = "Cairn contributors" }]
 dependencies = [
@@ -24,8 +24,7 @@ dependencies = [
 dev = [
   "pytest>=8",
   "pytest-cov",
-  "ruff>=0.5",
-  "mypy>=1.10",
+  "ruff",
 ]
 cookiecutter = ["cookiecutter>=2.6"]
 
@@ -37,7 +36,7 @@ packages = ["src/cairn"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
