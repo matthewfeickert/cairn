@@ -44,3 +44,7 @@ Branches are first-class in a cairn. Use them whenever the work is genuinely spe
 - A manifest file exists at `branches/<user-id>/<slug>.md`.
 - The user is left on the new branch with session context intact.
 - A same-name collision prompts for resolution rather than silently overwriting.
+
+## When the branch is done
+
+Every exploration branch eventually gets resolved — either it merges into main or it's abandoned. Both are valuable history. When the user signals the work is wrapping up ("we're done", "this didn't pan out", "I merged that"), use the **resolve-branch** skill (`cairn branch close`) to record the outcome in the manifest and move the row to the "Closed branches" section of `branches/README.md`. Don't let exploration branches accumulate without closure — that's how branch lists become noisy and the group loses track of what's actually live.

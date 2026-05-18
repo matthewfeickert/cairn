@@ -227,6 +227,21 @@ These stories cover agents (typically Claude Code, but the patterns generalize) 
 - The result is a draft (humans review before publishing); structure is valid against the chosen specification.
 - A reference to the artifact is added to `state/decisions.yaml` or wherever appropriate, so the cairn knows the artifact exists.
 
+### US-A-09: Close an exploration branch
+
+**Actor**: Anyone wrapping up an exploration branch (or an agent helping them)
+**Story**: As a contributor whose exploration branch is either merged or abandoned, I want to record its outcome so the cairn's branch history stays accurate and the group can learn from it.
+
+**Expected behavior**
+- A `resolve-branch` skill (and `cairn branch close <name> --status merged|abandoned --reason "..."` CLI command) closes a branch's record in the cairn.
+- For `--status merged`: the command verifies the branch is actually merged into `main` (`git merge-base --is-ancestor <branch> main`) and refuses with a clear error if not. The branch ref itself can be deleted by the user separately; Cairn only records the outcome.
+- For `--status abandoned`: no merge check; the branch can be left as a ref or deleted later.
+- Appends a closure block to the branch manifest at `branches/<owner>/<slug>.md` containing `status`, `closed_at` (UTC ISO 8601), `closed_by` (collaborator id), `reason`, and (for merged) the merge commit SHA.
+- Updates `branches/README.md` on main: the row moves from the "Active branches" table to a "Closed branches" section, preserving the outcome and reason so it remains discoverable.
+- Refuses to close a branch that has uncommitted changes in the working tree without an explicit `--force`.
+- The closure commit is attributed to the invoking user and references the branch name in its message.
+- The branch's manifest is never deleted — an abandoned branch's record is part of the cairn's history of what was tried.
+
 ---
 
 ## §3 — MCP Server Stories
