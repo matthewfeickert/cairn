@@ -55,12 +55,12 @@ def render_text(snap: StatusSnapshot) -> str:
         else:
             lines.append(f"  Git: {gb}")
 
-    # Active exploration branches (excluding main/master).
-    if snap.branches:
-        names = ", ".join(br.name for br in snap.branches)
-        lines.append(f"  Active branches: {names}")
+    # Active explorations (non-main git branches in the cairn).
+    if snap.explorations:
+        names = ", ".join(br.name for br in snap.explorations)
+        lines.append(f"  Active explorations: {names}")
     else:
-        lines.append("  Active branches: none")
+        lines.append("  Active explorations: none")
 
     if snap.recent_decisions:
         lines.append("")
@@ -105,9 +105,9 @@ def render_json(snap: StatusSnapshot) -> str:
             "upcoming": snap.action_breakdown.upcoming,
             "no_due_date": snap.action_breakdown.no_due_date,
         },
-        "branches": [
+        "explorations": [
             {"name": br.name, "owner": br.owner, "last_commit": br.last_commit}
-            for br in snap.branches
+            for br in snap.explorations
         ],
         "recent_decisions": [
             {

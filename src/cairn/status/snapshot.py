@@ -18,7 +18,9 @@ FINDING_NAME = re.compile(r"^(?P<date>\d{4}-\d{2}-\d{2})-(?P<slug>[a-z0-9][a-z0-
 
 
 @dataclass
-class BranchSummary:
+class ExplorationSummary:
+    """Summary of an active exploration (a non-main git branch in the cairn repo)."""
+
     name: str
     owner: str | None
     last_commit: str  # ISO date
@@ -52,7 +54,7 @@ class StatusSnapshot:
     decision_count: int = 0
     open_question_count: int = 0
     action_breakdown: ActionBreakdown = field(default_factory=ActionBreakdown)
-    branches: list[BranchSummary] = field(default_factory=list)
+    explorations: list[ExplorationSummary] = field(default_factory=list)
     recent_decisions: list[Decision] = field(default_factory=list)
     latest_meeting: str | None = None
     incomplete_action_count: int = 0
@@ -80,8 +82,8 @@ def _classify_actions(actions: list[ActionItem], today: date) -> ActionBreakdown
     return breakdown
 
 
-def _branches_summary(repo: Repo) -> list[BranchSummary]:
-    summary: list[BranchSummary] = []
+def _explorations_summary(repo: Repo) -> list[ExplorationSummary]:
+    summary: list[ExplorationSummary] = []
     main_names = {"main", "master"}
     for head in repo.heads:
         if head.name in main_names:
@@ -90,7 +92,7 @@ def _branches_summary(repo: Repo) -> list[BranchSummary]:
         ts = datetime.fromtimestamp(commit.committed_date, tz=timezone.utc).date().isoformat()
         # If branch is "<id>/<rest>", surface the leading id as owner.
         owner = head.name.split("/", 1)[0] if "/" in head.name else None
-        summary.append(BranchSummary(name=head.name, owner=owner, last_commit=ts))
+        summary.append(ExplorationSummary(name=head.name, owner=owner, last_commit=ts))
     return summary
 
 
@@ -207,7 +209,7 @@ def build_status(
     snap.incomplete_action_count = len(incomplete)
     snap.action_breakdown = _classify_actions(state.actions, today)
 
-    snap.branches = _branches_summary(repo)
+    snap.explorations = _explorations_summary(repo)
 
     sorted_decisions = sorted(state.decisions, key=lambda d: d.date, reverse=True)
     snap.recent_decisions = sorted_decisions[:5]

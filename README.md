@@ -80,12 +80,12 @@ cairn/
   - `cairn init` (US-P-01, US-P-02)
   - Basic state operations: `cairn collaborator add`, `cairn decision add`, `cairn validate`, `cairn status` (US-P-03 through US-P-06)
 - [x] **Phase 1 — Agent skills + supporting commands** *(done)*
-  - Bundled `SKILL.md` files in `templates/default/skills/`: `orient`, `search-history`, `start-branch`, `resolve-branch`, `complete-action`, `log-finding`
+  - Bundled `SKILL.md` files in `templates/default/skills/`: `orient`, `search-history`, `start-exploration`, `resolve-exploration`, `complete-action`, `log-finding`
   - US-A-01: Orient at session start (reads `PROJECT.md` + `state/collaborators.yaml`, runs `cairn status`)
-  - US-A-03: Create an exploration branch (`cairn branch start`)
+  - US-A-03: Create an exploration branch (`cairn exploration start`)
   - US-A-04: Mark an action item complete (`cairn action add` + `cairn action complete`)
   - US-A-05: Search prior discussions (skill — local file scan)
-  - US-A-09: Close an exploration branch (`cairn branch close`, merged or abandoned)
+  - US-A-09: Close an exploration branch (`cairn exploration close`, merged or abandoned)
 - [ ] **Phase 2 — Python package extensions** *(in progress)*
   - [x] Log a finding mid-session — `cairn finding add` + `log-finding` skill (US-A-02)
   - [ ] Meeting import (US-P-07)
@@ -107,8 +107,8 @@ Once installed (`pip install -e ".[dev]"`):
 | `cairn decision add` | Record a decision with auto ID, UTC timestamp, and cross-reference validation |
 | `cairn action add` | Add an action item with assignee, optional due date, and related-ID validation |
 | `cairn action complete <id>` | Mark an action complete; records completion time and completer (keeps history) |
-| `cairn branch start "<desc>"` | Create `<user-id>/<kebab>` branch + manifest, update `branches/README.md` |
-| `cairn branch close <name>` | Record a branch as merged or abandoned; updates manifest + branches/README.md |
+| `cairn exploration start "<desc>"` | Create `<user-id>/<kebab>` branch + manifest, update `explorations/README.md` |
+| `cairn exploration close <name>` | Record a branch as merged or abandoned; updates manifest + explorations/README.md |
 | `cairn finding add` | Write `knowledge/findings/YYYY-MM-DD-<slug>.md` with YAML frontmatter and commit it |
 | `cairn validate` | Check schemas, cross-references, and meeting filenames; non-zero exit on errors |
 | `cairn status` | Compact summary of open questions, actions, branches, recent decisions; supports `--json` and `--branch` |

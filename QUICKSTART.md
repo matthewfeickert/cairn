@@ -39,7 +39,7 @@ cairn init my-project --no-input
 cd my-project
 ```
 
-This scaffolds the canonical layout (`state/`, `knowledge/`, `skills/`, `branches/`, plus `PROJECT.md` and `README.md`), seeds empty-but-valid YAML state files, and creates the initial git commit attributed to you.
+This scaffolds the canonical layout (`state/`, `knowledge/`, `skills/`, `explorations/`, plus `PROJECT.md` and `README.md`), seeds empty-but-valid YAML state files, and creates the initial git commit attributed to you.
 
 ```sh
 git log --oneline                    # one initial commit
@@ -86,7 +86,7 @@ cairn validate                       # exit 1, names the file + entity + bad ref
 - `state/decisions.yaml`, `open_questions.yaml`, `action_items.yaml`, `goals.yaml`, `collaborators.yaml` — canonical state.
 - `knowledge/meetings/`, `findings/`, `literature/`, `provenance/` — accumulating project knowledge.
 - `skills/` — procedural skills available to agents working in this cairn.
-- `branches/README.md` — index of active exploration branches.
+- `explorations/README.md` — index of active exploration branches.
 - `PROJECT.md` — short orientation file an agent reads first.
 
 ## Bulk input via YAML

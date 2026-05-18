@@ -111,11 +111,11 @@ project-name/
     lit-review/SKILL.md
     methods-section/SKILL.md
     ...
-  branches/
-    README.md               # human-readable index of active branches
+  explorations/
+    README.md               # human-readable index of active explorations
 ```
 
-Git branches do the actual branching of files; the `branches/` directory is just an index that summarizes what each active branch is exploring, kept on main for visibility.
+Git branches do the actual branching of files; the `explorations/` directory is just an index (plus a per-exploration manifest) summarizing what each active line of inquiry is about, kept on main for visibility.
 
 ## State Schemas
 
@@ -229,7 +229,7 @@ The phasing below tracks the actual execution plan. (An earlier draft of this se
 Canonical cairn template at `templates/default/`, Pydantic v2 schemas for the five state files, and the CLI commands `cairn init`, `cairn collaborator add`, `cairn decision add`, `cairn validate`, `cairn status`. Covers user stories US-P-01 through US-P-06. The Python package is the canonical tooling for creating and working with cairns; cookiecutter-style templates remain supported via `cairn init --template <path-or-url>`.
 
 ### Phase 1 — Agent skills + supporting commands *(current)*
-Make a cairn useful inside a Claude Code session by bundling `SKILL.md` files in `templates/default/skills/` (the standard Claude Code skill format), and add the small set of CLI primitives those skills need. Target stories: US-A-01 (orient at session start), US-A-03 (create an exploration branch — requires `cairn branch start`), US-A-04 (mark an action item complete — requires `cairn action add` and `cairn action complete`), US-A-05 (search prior discussions). Skills land at the framework level and ship into new cairns through `cairn init`.
+Make a cairn useful inside a Claude Code session by bundling `SKILL.md` files in `templates/default/skills/` (the standard Claude Code skill format), and add the small set of CLI primitives those skills need. Target stories: US-A-01 (orient at session start), US-A-03 (create an exploration branch — requires `cairn exploration start`), US-A-04 (mark an action item complete — requires `cairn action add` and `cairn action complete`), US-A-05 (search prior discussions). Skills land at the framework level and ship into new cairns through `cairn init`.
 
 ### Phase 2 — Python package extensions
 Meeting import (US-P-07), artifact export to ASTRA / ARA / RO-Crate (US-P-08), and agenda draft (US-P-09). Also other small helpers as patterns settle.

@@ -1,4 +1,4 @@
-"""US-A-09 — Close an exploration branch."""
+"""US-A-09 — Close a cairn exploration."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ runner = CliRunner()
 
 
 def _bootstrap(cwd: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, str]:
-    """Init a cairn with one collaborator and one exploration branch; return (root, main_name)."""
+    """Init a cairn with one collaborator and one exploration; return (root, main_name)."""
     runner.invoke(app, ["init", "p", "--no-input"], catch_exceptions=False)
     root = cwd / "p"
     monkeypatch.chdir(root)
@@ -23,7 +23,7 @@ def _bootstrap(cwd: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, str]:
     )
     repo = Repo(root)
     main_name = "master" if "master" in [h.name for h in repo.heads] else "main"
-    runner.invoke(app, ["branch", "start", "try alt loss"], catch_exceptions=False)
+    runner.invoke(app, ["exploration", "start", "try alt loss"], catch_exceptions=False)
     repo.git.checkout(main_name)
     return root, main_name
 
@@ -33,22 +33,22 @@ def test_us_a_09_abandoned_path(cwd: Path, monkeypatch: pytest.MonkeyPatch):
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "abandoned",
             "--reason", "explored, did not pan out",
         ],
         catch_exceptions=False,
     )
     assert res.exit_code == 0, res.output
-    manifest = (root / "branches" / "kyle" / "try-alt-loss.md").read_text()
+    manifest = (root / "explorations" / "kyle" / "try-alt-loss.md").read_text()
     assert "## Closure" in manifest
     assert "Status**: abandoned" in manifest
     assert "explored, did not pan out" in manifest
-    readme = (root / "branches" / "README.md").read_text()
-    assert "## Closed branches" in readme
+    readme = (root / "explorations" / "README.md").read_text()
+    assert "## Closed explorations" in readme
     assert "abandoned" in readme
     # The row should not still be in the active table:
-    active_section = readme.split("## Closed branches", 1)[0]
+    active_section = readme.split("## Closed explorations", 1)[0]
     assert "`kyle/try-alt-loss`" not in active_section
 
 
@@ -56,20 +56,20 @@ def test_us_a_09_merged_path(cwd: Path, monkeypatch: pytest.MonkeyPatch):
     root, _main_name = _bootstrap(cwd, monkeypatch)
     repo = Repo(root)
     # Fast-forward merge: no new commit is created, so the test sidesteps the
-    # environment's commit-signing infrastructure. cairn branch close only cares
-    # that the branch is an ancestor of main — ff and no-ff both satisfy that.
+    # environment's commit-signing infrastructure. cairn exploration close only cares
+    # that the exploration git branch is an ancestor of main — ff and no-ff both satisfy that.
     repo.git.merge("kyle/try-alt-loss", "--ff-only")
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "merged",
             "--reason", "findings promoted",
         ],
         catch_exceptions=False,
     )
     assert res.exit_code == 0, res.output
-    manifest = (root / "branches" / "kyle" / "try-alt-loss.md").read_text()
+    manifest = (root / "explorations" / "kyle" / "try-alt-loss.md").read_text()
     assert "Status**: merged" in manifest
     assert "Merge commit**:" in manifest
 
@@ -77,11 +77,11 @@ def test_us_a_09_merged_path(cwd: Path, monkeypatch: pytest.MonkeyPatch):
 def test_us_a_09_refuses_merged_when_not_merged(
     cwd: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    _bootstrap(cwd, monkeypatch)  # branch is not merged
+    _bootstrap(cwd, monkeypatch)  # exploration is not merged
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "merged",
             "--reason", "lying",
         ],
@@ -91,12 +91,12 @@ def test_us_a_09_refuses_merged_when_not_merged(
     assert "not an ancestor" in res.output.lower()
 
 
-def test_us_a_09_refuses_unknown_branch(cwd: Path, monkeypatch: pytest.MonkeyPatch):
+def test_us_a_09_refuses_unknown_exploration(cwd: Path, monkeypatch: pytest.MonkeyPatch):
     _bootstrap(cwd, monkeypatch)
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/never-existed",
+            "exploration", "close", "kyle/never-existed",
             "--status", "abandoned",
             "--reason", "n/a",
         ],
@@ -111,7 +111,7 @@ def test_us_a_09_refuses_invalid_status(cwd: Path, monkeypatch: pytest.MonkeyPat
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "shipped",
             "--reason", "x",
         ],
@@ -126,7 +126,7 @@ def test_us_a_09_refuses_empty_reason(cwd: Path, monkeypatch: pytest.MonkeyPatch
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "abandoned",
             "--reason", "   ",
         ],
@@ -140,7 +140,7 @@ def test_us_a_09_refuses_non_owner_slug_form(cwd: Path, monkeypatch: pytest.Monk
     res = runner.invoke(
         app,
         [
-            "branch", "close", "main",
+            "exploration", "close", "main",
             "--status", "abandoned",
             "--reason", "no",
         ],
@@ -152,12 +152,12 @@ def test_us_a_09_refuses_non_owner_slug_form(cwd: Path, monkeypatch: pytest.Monk
 
 def test_us_a_09_refuses_when_not_on_main(cwd: Path, monkeypatch: pytest.MonkeyPatch):
     _bootstrap(cwd, monkeypatch)
-    # Switch to the exploration branch (i.e. not main)
+    # Switch to the exploration (i.e. not main)
     Repo(".").git.checkout("kyle/try-alt-loss")
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "abandoned",
             "--reason", "x",
         ],
@@ -176,7 +176,7 @@ def test_us_a_09_refuses_dirty_working_tree_without_force(
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "abandoned",
             "--reason", "x",
         ],
@@ -193,7 +193,7 @@ def test_us_a_09_unknown_closed_by_errors(cwd: Path, monkeypatch: pytest.MonkeyP
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "abandoned",
             "--reason", "x",
             "--closed-by", "ghost",
@@ -212,7 +212,7 @@ def test_us_a_09_closed_by_required_when_multiple_collaborators(
     res = runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "abandoned",
             "--reason", "x",
         ],
@@ -222,14 +222,14 @@ def test_us_a_09_closed_by_required_when_multiple_collaborators(
     assert "--closed-by" in res.output
 
 
-def test_us_a_09_commit_attributed_and_references_branch(
+def test_us_a_09_commit_attributed_and_references_exploration(
     cwd: Path, monkeypatch: pytest.MonkeyPatch
 ):
     root, _ = _bootstrap(cwd, monkeypatch)
     runner.invoke(
         app,
         [
-            "branch", "close", "kyle/try-alt-loss",
+            "exploration", "close", "kyle/try-alt-loss",
             "--status", "abandoned",
             "--reason", "tried it",
         ],

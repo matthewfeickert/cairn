@@ -32,7 +32,7 @@ REQUIRED_DIRS = (
     "knowledge/literature",
     "knowledge/provenance",
     "skills",
-    "branches",
+    "explorations",
 )
 
 
@@ -71,8 +71,8 @@ class CairnPaths:
         return self.root / "skills"
 
     @property
-    def branches(self) -> Path:
-        return self.root / "branches"
+    def explorations(self) -> Path:
+        return self.root / "explorations"
 
     @property
     def project_md(self) -> Path:

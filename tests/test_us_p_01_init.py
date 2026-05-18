@@ -33,7 +33,7 @@ def test_us_p_01_creates_full_directory_tree(cwd: Path):
         "knowledge/literature",
         "knowledge/provenance",
         "skills",
-        "branches",
+        "explorations",
     ):
         assert (root / sub).is_dir(), f"missing {sub}"
     for f in ("README.md", "PROJECT.md", ".gitignore"):
@@ -67,10 +67,10 @@ def test_us_p_01_bundles_skill_files(cwd: Path):
     expected = {
         "orient",
         "search-history",
-        "start-branch",
+        "start-exploration",
         "complete-action",
         "log-finding",
-        "resolve-branch",
+        "resolve-exploration",
         "debrief",
     }
     present = {p.name for p in skills_dir.iterdir() if p.is_dir()}
