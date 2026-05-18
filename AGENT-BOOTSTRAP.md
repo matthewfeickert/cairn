@@ -77,13 +77,12 @@ Ask the user:
 
 - **Project name** (short, kebab-case if possible — this becomes the directory name and a few labels inside `PROJECT.md`).
 - **Parent directory** (defaults to `~/projects/` or wherever they keep their work).
-- **PI name** (the principal investigator; can be the user themselves).
 
-Echo all three values back, then ask "shall I proceed?" before running:
+Echo both values back, then ask "shall I proceed?" before running:
 
 ```sh
 cd <parent-directory>
-cairn init <project-name> --pi-name "<PI Name>" --no-input
+cairn init <project-name> --no-input
 cd <project-name>
 ```
 
@@ -100,8 +99,10 @@ cat state/collaborators.yaml   # should be "[]"
 Ask the user:
 
 - **Collaborator id** — short, kebab-case, lowercase (e.g., `kyle`, `maria-s`). This is the canonical handle used in attributions and cross-references throughout the cairn.
-- **Role** (e.g., "PI", "postdoc", "PhD student", "RA").
+- **Role** — what they actually *do* on this project. Bias toward activity-based descriptions ("designing generative models", "running ablation experiments", "maintaining the data pipeline", "writing the introduction"), not titles ("PI", "postdoc", "professor"). Cairn intentionally avoids prescribing a hierarchy; whatever description fits the user's actual contribution is right. If they offer a title, that's also fine — accept it.
 - Optional: GitHub handle, expertise tags, current focus.
+
+When offering suggestions in any interactive prompt, suggest activity-based phrasings, not titles. Do not present role as a choice between fixed academic titles.
 
 Then run:
 
