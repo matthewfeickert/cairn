@@ -24,32 +24,45 @@ git --version       # any recent version
 
 If either is missing or below the required version, **stop** and tell the user what to install before continuing. Do not try to install Python or git for them.
 
-## Step 2 — Choose an install environment ★
+## Step 2 — Install Cairn ★
 
-Ask the user which Python environment they want to install into. Offer (in this order):
+> **Important UX note for you (the agent).** Your shell tool starts a fresh process for each command — `conda activate` or `source venv/bin/activate` in one tool call does NOT persist to the next. If you install into a conda env or venv, every subsequent `cairn` invocation will need either re-activation or an absolute path (`~/.venvs/cairn/bin/cairn …`), which is clunky for the user. **Prefer `pipx` unless the user has a strong reason otherwise** — it installs Cairn into its own isolated env and exposes the `cairn` entry point on the user's normal PATH, so subsequent commands Just Work without activation.
 
-1. **A fresh virtual environment** at `~/.venvs/cairn` (recommended if they don't have a preference).
-2. **A user-supplied venv / pixi / uv / conda environment** they already have active.
-3. **The system Python** (last resort — warn that `pip install --user` is preferred over global).
+Offer the user these options, in this order:
 
-Wait for their choice. Then run the install:
+1. **pipx** *(recommended).* One install, `cairn` on PATH everywhere afterward, no activation needed for any subsequent step.
+2. **A user-supplied venv / conda / pixi / uv environment** they already have active. Works, but every subsequent `cairn` command in this session will need the env's full binary path (e.g., `~/.venvs/cairn/bin/cairn …`) because your shell tool resets between calls.
+3. **`pip install --user`** as a fallback. Installs to `~/.local/bin/cairn` (assuming that's on PATH).
+
+Install commands:
 
 ```sh
-# Option 1 — fresh venv:
-python -m venv ~/.venvs/cairn && source ~/.venvs/cairn/bin/activate
+# Option 1 — pipx (recommended)
+pipx install git+https://github.com/cranmer/cairn
 
-# Then, in whichever environment they chose:
+# Option 2 — existing env (caller activates it themselves first)
 pip install git+https://github.com/cranmer/cairn
+
+# Option 3 — user-site
+pip install --user git+https://github.com/cranmer/cairn
+```
+
+If `pipx` itself isn't installed, offer to install it for the user:
+
+```sh
+python -m pip install --user pipx && python -m pipx ensurepath
+# user may need to restart their shell after ensurepath, or `source ~/.bashrc` / `~/.zshrc`
 ```
 
 Verify the install worked:
 
 ```sh
+which cairn      # capture this path — if `cairn` ever stops resolving later, use this absolute path
 cairn --help     # should list init, collaborator, decision, action, branch, finding, validate, status, version
 cairn version
 ```
 
-If `cairn --help` doesn't work, troubleshoot the PATH before continuing.
+If `cairn --help` doesn't work and the user picked option 2 (env-based install), use the full path (`<env>/bin/cairn`) for every subsequent step in this doc and tell the user explicitly: *"Your shell will need `conda activate cairn` (or equivalent) before `cairn` works in a new terminal."* If they want to avoid that, suggest reinstalling via pipx.
 
 ## Step 3 — Confirm git identity ★
 
