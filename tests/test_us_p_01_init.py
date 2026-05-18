@@ -71,6 +71,7 @@ def test_us_p_01_bundles_skill_files(cwd: Path):
         "complete-action",
         "log-finding",
         "resolve-branch",
+        "debrief",
     }
     present = {p.name for p in skills_dir.iterdir() if p.is_dir()}
     assert expected <= present, f"missing skills: {expected - present}"
@@ -80,6 +81,17 @@ def test_us_p_01_bundles_skill_files(cwd: Path):
         text = skill_md.read_text()
         assert text.startswith("---\n"), f"{name}/SKILL.md must start with YAML frontmatter"
         assert f"name: {name}" in text
+
+
+def test_us_p_01_bundles_tracking_stance_guide(cwd: Path):
+    """Every new cairn ships TRACKING.md so the agent has a posture guide."""
+    _invoke_init(cwd)
+    tracking = cwd / "test-project" / "TRACKING.md"
+    assert tracking.is_file()
+    text = tracking.read_text()
+    # Sanity: the guide should mention the capture-eagerly posture and signals table.
+    assert "capture eagerly" in text.lower()
+    assert "signals to listen for" in text.lower()
 
 
 def test_us_p_01_bundles_claude_session_start_hook(cwd: Path):

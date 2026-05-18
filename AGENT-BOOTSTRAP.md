@@ -4,6 +4,17 @@
 
 If the user has already created a cairn and just wants you to orient inside it, this file is the wrong one — point them at `QUICKSTART.md` and stop.
 
+## Two access modes — know which one you're setting up
+
+A cairn is a *separate* git repo from the project's working code/data/paper repos (see README.md's "A cairn is not a project's code repo" section). That means a user can have an agent session open in one of two places:
+
+- **Mode A** — session opened inside the cairn directory. Cairn's SessionStart hook, skills, and `TRACKING.md` posture are all loaded automatically. This is the **v0 supported mode for cairn work**: planning, debriefing, recording decisions, reviewing project state.
+- **Mode B** — session opened inside a project's code repo, cairn lives elsewhere. The agent has no automatic awareness of the cairn. Cross-repo skills distribution is on the roadmap (`docs/decisions/0005-cross-repo-skills.md`) but **not yet supported in v0**.
+
+This bootstrap doc creates a cairn and leaves the *current* session ready to do cairn work in Mode A. If the user later wants to do code work, they should open a separate Claude Code session inside the code repo, and come back to a cairn session (or run the *debrief* skill at the end of a working block) to capture what happened.
+
+If the user mentions they already have a project repo with code in it, the cairn you scaffold lives **alongside** that repo (e.g., `~/projects/foo-cairn/` next to `~/projects/foo/`), never inside it. You do not modify the existing project repo during bootstrap.
+
 ## Session affordances you should use
 
 Two things about your Claude Code session that matter for this bootstrap:
@@ -146,13 +157,16 @@ git log --oneline   # the new commit "Add collaborator '<id>'"
 
 ## Step 6 — Show the user what they have
 
-Tell the user that the cairn now includes five bundled `SKILL.md` files under `skills/`:
+Tell the user that the cairn now includes seven bundled `SKILL.md` files under `skills/`, plus a top-level `TRACKING.md` guide:
 
-- **orient** — what you (the agent) should read at session start to be useful without burning context.
+- **TRACKING.md** (at the cairn root) — the *posture* guide. Cairn's whole point is that the user shouldn't have to invoke CLI commands by hand; you (the agent) listen for capture-worthy signals in conversation and record them transparently. Read this once at session start.
+- **orient** — what you should read at session start to be useful without burning context.
 - **search-history** — local-file scan for "was X considered?" questions.
 - **start-branch** — wraps `cairn branch start "<desc>"` for exploratory work.
+- **resolve-branch** — wraps `cairn branch close <name>` when an exploration branch is merged or abandoned. Counterpart to `start-branch`.
 - **complete-action** — wraps `cairn action complete <id>` when something gets done.
 - **log-finding** — wraps `cairn finding add` when the user discovers something worth recording.
+- **debrief** — at session-end signals ("let's wrap up", "good place to stop"), reviews the conversation and produces a single batched proposal of any captures that didn't happen live. One round of bulk confirmation rather than per-item interruptions.
 
 Suggest two concrete next steps they might take in this session:
 
@@ -198,6 +212,7 @@ Tell the user: *"Future Claude Code sessions opened in this cairn will auto-orie
 - **`cairn init` errors with "no git user identity configured"**: go back to Step 3 and set it; do not invent.
 - **`cairn init` errors with "refusing to overwrite"**: a directory with that name already exists. Ask the user whether to pick a new name or pass `--force` (which deletes the existing directory; warn first).
 - **Any schema or YAML error**: stop, show the user the exact error, and ask how to proceed. Do not edit state files by hand to "fix" them without confirmation.
+- **`pipx upgrade cairn` did nothing on an old install**: expected if the installed version is the pre–hatch-vcs static `0.1.0`. Run `pipx install --force git+https://github.com/cranmer/cairn` once to land on the dynamic-versioning era; after that, `pipx upgrade` works normally. See the "Upgrading Cairn later" section below.
 
 ## What you should *not* do
 
@@ -210,6 +225,25 @@ Tell the user: *"Future Claude Code sessions opened in this cairn will auto-orie
 
 Tell the user:
 
-> Your cairn `<name>` is live at `<absolute-path>`. The skills in `skills/<…>/SKILL.md` are now available to me for this session. Ask me to *orient* whenever you want a status summary, or just describe what you want to do next — I'll pick the right skill.
+> Your cairn `<name>` is live at `<absolute-path>`. The skills in `skills/<…>/SKILL.md` are now available to me for this session — this is Mode A (we're working inside the cairn). For future cairn work, open Claude Code in this directory; for code work in your project repo(s), open a separate session there and come back to a cairn session (or invoke the *debrief* skill at the end of a working block) to capture what happened. Ask me to *orient* whenever you want a status summary, or just describe what you want to do next — I'll pick the right skill.
 
 Then stop. The user will direct the next step.
+
+## Upgrading Cairn later
+
+Cairn is pre-1.0 and changes land directly on `main`. The package version is now derived from git via `hatch-vcs` — every commit produces a unique version like `0.1.0.dev28+g0b9c97f`, so `pipx upgrade cairn` (and `pip install --upgrade`) correctly detect new commits rather than short-circuiting on matching static metadata.
+
+To pick up the latest:
+
+```sh
+# pipx (recommended install path)
+pipx upgrade cairn                                              # if Cairn was installed via pipx
+pipx install --force git+https://github.com/cranmer/cairn       # equivalent; works even when upgrade can't
+
+# pip in a venv / conda env
+pip install --upgrade git+https://github.com/cranmer/cairn
+```
+
+If you (or the user) hit a Cairn install from before this commit where the version was the static `0.1.0`, `pipx upgrade` will no-op — fall back to `pipx install --force ...` once, and `pipx upgrade` will work from then on.
+
+After upgrading, **existing cairns are not automatically updated.** They already shipped with whatever template / skills / `.claude/settings.json` were current at `cairn init` time, and Cairn doesn't yet have a `cairn upgrade <project>` migration command. If a meaningful template change shipped, surface that to the user and either (a) re-init into a new directory and have the user copy state over, or (b) cherry-pick specific files from the new template's location (see `python -c "import importlib.resources; print(importlib.resources.files('cairn').joinpath('templates','default'))"`). Don't auto-overwrite without asking — the user may have hand-edited PROJECT.md, etc.
