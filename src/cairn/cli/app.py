@@ -5,9 +5,9 @@ from __future__ import annotations
 import typer
 
 from .action_cmd import app as action_app
-from .branch_cmd import app as branch_app
 from .collaborator_cmd import app as collaborator_app
 from .decision_cmd import app as decision_app
+from .exploration_cmd import app as exploration_app
 from .finding_cmd import app as finding_app
 from .init_cmd import init
 from .status_cmd import status
@@ -23,7 +23,7 @@ app.command(name="init")(init)
 app.add_typer(collaborator_app, name="collaborator")
 app.add_typer(decision_app, name="decision")
 app.add_typer(action_app, name="action")
-app.add_typer(branch_app, name="branch")
+app.add_typer(exploration_app, name="exploration")
 app.add_typer(finding_app, name="finding")
 app.command(name="validate")(validate)
 app.command(name="status")(status)

@@ -123,7 +123,7 @@ cd <project-name>
 Verify:
 
 ```sh
-ls                  # README.md, PROJECT.md, state/, knowledge/, skills/, branches/
+ls                  # README.md, PROJECT.md, state/, knowledge/, skills/, explorations/
 git log --oneline   # one commit "Initial commit: scaffold cairn '<name>'"
 cat state/collaborators.yaml   # should be "[]"
 ```
@@ -171,8 +171,8 @@ The procedures:
 - **TRACKING.md** (at the cairn root) — the *posture* guide. Cairn's whole point is that the user shouldn't have to invoke CLI commands by hand; you (the agent) listen for capture-worthy signals in conversation and record them transparently. Read this once at session start.
 - **orient** — what you should read at session start to be useful without burning context.
 - **search-history** — local-file scan for "was X considered?" questions.
-- **start-branch** — wraps `cairn branch start "<desc>"` for exploratory work.
-- **resolve-branch** — wraps `cairn branch close <name>` when an exploration branch is merged or abandoned. Counterpart to `start-branch`.
+- **start-exploration** — wraps `cairn exploration start "<desc>"` for exploratory work.
+- **resolve-exploration** — wraps `cairn exploration close <name>` when an exploration branch is merged or abandoned. Counterpart to `start-exploration`.
 - **complete-action** — wraps `cairn action complete <id>` when something gets done.
 - **log-finding** — wraps `cairn finding add` when the user discovers something worth recording.
 - **debrief** — at session-end signals ("let's wrap up", "good place to stop"), reviews the conversation and produces a single batched proposal of any captures that didn't happen live. One round of bulk confirmation rather than per-item interruptions.

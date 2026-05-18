@@ -1,6 +1,6 @@
 ---
 name: log-finding
-description: Use when the user expresses something they want recorded as a finding ("we just learned that…", "remember this finding…", "log that…", "we discovered…"). Writes a new markdown file under knowledge/findings/ with proper YAML frontmatter (date, author, related references). The author is the human, not you. If the user is on a branch, the finding lands there.
+description: Use when the user expresses something they want recorded as a finding ("we just learned that…", "remember this finding…", "log that…", "we discovered…"). Writes a new markdown file under knowledge/findings/ with proper YAML frontmatter (date, author, related references). The author is the human, not you. If the user is on an exploration (a non-main git branch in the cairn), the finding records that exploration's name.
 ---
 
 # Log a finding
@@ -28,12 +28,12 @@ A *finding* is a small piece of learned knowledge worth keeping — an empirical
 
    This will:
    - derive a kebab-case slug from `--title` (override with `--slug`),
-   - write `knowledge/findings/YYYY-MM-DD-<slug>.md` with frontmatter (`date`, `author`, `title`, `slug`, `related`, `branch`),
+   - write `knowledge/findings/YYYY-MM-DD-<slug>.md` with frontmatter (`date`, `author`, `title`, `slug`, `related`, `exploration`),
    - stage and commit the file, attributed to the configured git user.
 
 5. **Default to asking before committing.** By default the CLI commits immediately, which is the right behavior when *you* (the agent) are invoking it on the user's behalf and they've just confirmed the finding. If you sense any hesitation in the user, pass `--no-commit`: the file is still written, but the user can review and `git commit` it themselves.
 
-6. **Branch awareness.** The CLI records the current branch in the frontmatter automatically. If the user is on an exploration branch, the finding lands there (not on main). Don't merge or switch branches; let the user decide later whether to promote the finding.
+6. **Exploration awareness.** The CLI records the current git branch in the frontmatter's `exploration` field automatically. If the user is on a cairn exploration (a non-main git branch in the cairn), the finding lands there and records that exploration's name. Don't merge or switch branches; let the user decide later whether to promote the finding.
 
 ## What not to do
 
@@ -45,5 +45,5 @@ A *finding* is a small piece of learned knowledge worth keeping — an empirical
 
 - The file is at `knowledge/findings/YYYY-MM-DD-<short-slug>.md` with proper frontmatter.
 - The author is the current human user.
-- If on a branch, the finding lands on that branch.
+- If on an exploration, the `exploration` field records its name and the finding lands on that git branch.
 - A git commit is staged; the agent defaults to asking confirmation before committing for less-experienced users.

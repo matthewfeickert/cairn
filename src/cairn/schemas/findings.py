@@ -27,7 +27,7 @@ class FindingFrontmatter(BaseModel):
     title: str = Field(min_length=1)
     slug: FindingSlug
     related: list[EntityId] = Field(default_factory=list)
-    branch: str | None = None
+    exploration: str | None = None
 
 
 FINDING_FILENAME = re.compile(r"^(?P<date>\d{4}-\d{2}-\d{2})-(?P<slug>[a-z0-9][a-z0-9-]*)\.md$")

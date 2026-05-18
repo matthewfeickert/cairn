@@ -98,19 +98,19 @@ def test_us_a_02_related_resolved_ok(cwd: Path, monkeypatch: pytest.MonkeyPatch)
     assert data["related"] == ["D-001"]
 
 
-def test_us_a_02_branch_recorded_in_frontmatter(
+def test_us_a_02_exploration_recorded_in_frontmatter(
     cwd: Path, monkeypatch: pytest.MonkeyPatch
 ):
     root = _bootstrap(cwd, monkeypatch)
-    runner.invoke(app, ["branch", "start", "explore"], catch_exceptions=False)
+    runner.invoke(app, ["exploration", "start", "explore"], catch_exceptions=False)
     runner.invoke(
         app,
-        ["finding", "add", "--author", "kyle", "--title", "Found on branch"],
+        ["finding", "add", "--author", "kyle", "--title", "Found during exploration"],
         catch_exceptions=False,
     )
     f = next((root / "knowledge" / "findings").glob("*.md"))
     data, _ = fm.load(f)
-    assert data["branch"] == "kyle/explore"
+    assert data["exploration"] == "kyle/explore"
 
 
 def test_us_a_02_commits_attributed_to_user(cwd: Path, monkeypatch: pytest.MonkeyPatch):

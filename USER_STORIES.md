@@ -29,7 +29,7 @@ The `cairn` Python package is the canonical tooling for creating and managing ca
 **Story**: As a PI starting a new project, I want to scaffold a cairn from scratch so my group can begin using it immediately.
 
 **Expected behavior**
-- Running `cairn init <project-name>` in an empty or new directory creates the full repository structure: `state/`, `knowledge/{meetings,findings,literature,provenance}/`, `skills/`, `branches/`, `README.md`, `PROJECT.md`, `.gitignore`.
+- Running `cairn init <project-name>` in an empty or new directory creates the full repository structure: `state/`, `knowledge/{meetings,findings,literature,provenance}/`, `skills/`, `explorations/`, `README.md`, `PROJECT.md`, `.gitignore`.
 - All state YAML files (`decisions.yaml`, `open_questions.yaml`, `action_items.yaml`, `goals.yaml`, `collaborators.yaml`) exist as empty but schema-valid documents.
 - `PROJECT.md` has a working orientation template with the project name interpolated and clear TODO markers for the parts a human should fill in.
 - The directory is initialized as a git repository with an initial commit attributed to the invoking user.
@@ -173,17 +173,17 @@ These stories cover agents (typically Claude Code, but the patterns generalize) 
 - If the user is on a branch, the finding lands on that branch.
 - The agent stages a git commit but defaults to asking for user confirmation before committing (configurable: an autocommit mode is acceptable for advanced users).
 
-### US-A-03: Create an exploration branch
+### US-A-03: Create an exploration
 
 **Actor**: Claude Code agent
-**Story**: As an agent helping a user explore an alternative approach, I want to create a branch the group can review later without disrupting main.
+**Story**: As an agent helping a user explore an alternative approach, I want to create a exploration the group can review later without disrupting main.
 
 **Expected behavior**
-- A `start-branch` skill creates a git branch named `<user-id>/<short-description>` (kebab-case, derived from the user's stated goal).
-- Adds an entry to `branches/README.md` describing the branch's purpose, owner, and date opened.
-- The branch's first commit is a "branch manifest" file (e.g., `branches/<branch-name>.md`) recording the proposed line of inquiry and its initial rationale.
+- A `start-exploration` skill creates a git branch in the cairn named `<user-id>/<short-description>` (kebab-case, derived from the user's stated goal).
+- Adds an entry to `explorations/README.md` describing the exploration's purpose, owner, and date opened.
+- The branch's first commit is a "exploration manifest" file (e.g., `explorations/<exploration-name>.md`) recording the proposed line of inquiry and its initial rationale.
 - The user is left on the new branch with their session intact.
-- If a branch with the same name already exists, the agent prompts for resolution rather than silently overwriting.
+- If an exploration with the same name already exists, the agent prompts for resolution rather than silently overwriting.
 
 ### US-A-04: Mark an action item complete
 
@@ -215,7 +215,7 @@ These stories cover agents (typically Claude Code, but the patterns generalize) 
 **Expected behavior**
 - The agent writes to its dedicated branch (e.g., `lit-monitor/2026-05-W3`), never to main.
 - Each addition is a file in `knowledge/literature/` with the agent identity (`lit-monitor`) as the commit author, distinct from any human collaborator.
-- An entry in the agent's namespaced review queue (e.g., `branches/lit-monitor.md`) summarizes the new additions so humans can promote selected items to main via PR.
+- An entry in the agent's namespaced review queue (e.g., `explorations/lit-monitor.md`) summarizes the new additions so humans can promote selected items to main via PR.
 - The agent honors the permissions declared in its entry in `state/collaborators.yaml`: writes only within its scoped branches; never modifies canonical state directly.
 - Validation runs after every batch; on failure, the agent rolls back its branch and surfaces the error rather than committing a broken state.
 
@@ -241,20 +241,20 @@ These stories cover agents (typically Claude Code, but the patterns generalize) 
 - The result is a draft (humans review before publishing); structure is valid against the chosen specification.
 - A reference to the artifact is added to `state/decisions.yaml` or wherever appropriate, so the cairn knows the artifact exists.
 
-### US-A-09: Close an exploration branch
+### US-A-09: Close an exploration
 
-**Actor**: Anyone wrapping up an exploration branch (or an agent helping them)
-**Story**: As a contributor whose exploration branch is either merged or abandoned, I want to record its outcome so the cairn's branch history stays accurate and the group can learn from it.
+**Actor**: Anyone wrapping up an exploration (or an agent helping them)
+**Story**: As a contributor whose exploration is either merged or abandoned, I want to record its outcome so the cairn's exploration history stays accurate and the group can learn from it.
 
 **Expected behavior**
-- A `resolve-branch` skill (and `cairn branch close <name> --status merged|abandoned --reason "..."` CLI command) closes a branch's record in the cairn.
+- A `resolve-exploration` skill (and `cairn exploration close <name> --status merged|abandoned --reason "..."` CLI command) closes an exploration's record in the cairn.
 - For `--status merged`: the command verifies the branch is actually merged into `main` (`git merge-base --is-ancestor <branch> main`) and refuses with a clear error if not. The branch ref itself can be deleted by the user separately; Cairn only records the outcome.
 - For `--status abandoned`: no merge check; the branch can be left as a ref or deleted later.
-- Appends a closure block to the branch manifest at `branches/<owner>/<slug>.md` containing `status`, `closed_at` (UTC ISO 8601), `closed_by` (collaborator id), `reason`, and (for merged) the merge commit SHA.
-- Updates `branches/README.md` on main: the row moves from the "Active branches" table to a "Closed branches" section, preserving the outcome and reason so it remains discoverable.
+- Appends a closure block to the exploration manifest at `explorations/<owner>/<slug>.md` containing `status`, `closed_at` (UTC ISO 8601), `closed_by` (collaborator id), `reason`, and (for merged) the merge commit SHA.
+- Updates `explorations/README.md` on main: the row moves from the "Active explorations" table to a "Closed explorations" section, preserving the outcome and reason so it remains discoverable.
 - Refuses to close a branch that has uncommitted changes in the working tree without an explicit `--force`.
-- The closure commit is attributed to the invoking user and references the branch name in its message.
-- The branch's manifest is never deleted — an abandoned branch's record is part of the cairn's history of what was tried.
+- The closure commit is attributed to the invoking user and references the exploration name in its message.
+- The exploration's manifest is never deleted — an abandoned exploration's record is part of the cairn's history of what was tried.
 
 ---
 

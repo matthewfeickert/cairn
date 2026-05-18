@@ -1,4 +1,11 @@
-"""`cairn branch start` and `cairn branch close` — exploration branch lifecycle."""
+"""`cairn exploration start` and `cairn exploration close` — exploration lifecycle.
+
+A cairn *exploration* is a tracked alternative line of inquiry, materialized as
+a git branch in the cairn repo plus a manifest under ``explorations/``. The
+user-facing concept is "exploration"; the underlying mechanism is a git
+branch (so the variable name ``branch_name`` survives where the code is
+operating on git's notion of a branch).
+"""
 
 from __future__ import annotations
 
@@ -14,15 +21,16 @@ from ..git_ops import commit, get_user_identity
 from ..io.state_io import load_collaborators
 from ._common import resolve_or_exit
 
-app = typer.Typer(no_args_is_help=True, help="Manage exploration branches.")
+app = typer.Typer(no_args_is_help=True, help="Manage cairn explorations.")
 
 
 _SLUG_BAD = re.compile(r"[^a-z0-9]+")
 
-ACTIVE_HEADING = "# Active branches"
-CLOSED_HEADING = "## Closed branches"
+ACTIVE_HEADING = "# Active explorations"
+CLOSED_HEADING = "## Closed explorations"
 CLOSED_TABLE_HEADER = (
-    "| Branch | Owner | Closed | Status | Reason |\n|--------|-------|--------|--------|--------|"
+    "| Exploration | Owner | Closed | Status | Reason |\n"
+    "|-------------|-------|--------|--------|--------|"
 )
 
 
@@ -34,11 +42,11 @@ def _kebab(text: str) -> str:
     return slug[:50]
 
 
-def _branches_index_entry(branch_name: str, owner: str, date_str: str, purpose: str) -> str:
+def _explorations_index_entry(branch_name: str, owner: str, date_str: str, purpose: str) -> str:
     return f"| `{branch_name}` | {owner} | {date_str} | {purpose} |\n"
 
 
-def _append_to_branches_readme(readme: Path, line: str) -> None:
+def _append_to_explorations_readme(readme: Path, line: str) -> None:
     text = readme.read_text(encoding="utf-8") if readme.exists() else ""
     if not text.endswith("\n"):
         text += "\n"
@@ -47,10 +55,10 @@ def _append_to_branches_readme(readme: Path, line: str) -> None:
 
 def _manifest_body(branch_name: str, owner: str, date_str: str, description: str) -> str:
     return (
-        f"# Branch manifest: `{branch_name}`\n\n"
+        f"# Exploration manifest: `{branch_name}`\n\n"
         f"- **Owner**: {owner}\n"
         f"- **Opened**: {date_str}\n"
-        f"- **Branch**: `{branch_name}`\n\n"
+        f"- **Git branch**: `{branch_name}`\n\n"
         f"## Proposed line of inquiry\n\n"
         f"{description}\n\n"
         f"## Initial rationale\n\n"
@@ -64,11 +72,11 @@ def start(
     as_id: str | None = typer.Option(
         None,
         "--as",
-        help="Collaborator id to attribute the branch to. "
+        help="Collaborator id to attribute the exploration to. "
         "Defaults to the only collaborator if there is exactly one.",
     ),
 ) -> None:
-    """Create `<user-id>/<kebab>` branch, write a manifest, and update the index."""
+    """Create `<user-id>/<kebab>` git branch, write a manifest, and update the index."""
     paths = resolve_or_exit()
     collabs = load_collaborators(paths)
     known_ids = {c.id for c in collabs}
@@ -103,31 +111,32 @@ def start(
 
     if branch_name in [h.name for h in repo.heads]:
         typer.echo(
-            f"error: branch '{branch_name}' already exists. "
+            f"error: exploration '{branch_name}' already exists "
+            f"(a git branch by that name is present). "
             f"Pick a different description or delete the existing branch first.",
             err=True,
         )
         raise typer.Exit(code=1)
 
     today = datetime.now(timezone.utc).date().isoformat()
-    manifest_path = paths.branches / as_id / f"{slug}.md"
+    manifest_path = paths.explorations / as_id / f"{slug}.md"
 
-    # 1. Update branches/README.md on the current branch (typically main).
+    # 1. Update explorations/README.md on the current branch (typically main).
     manifest_rel = manifest_path.relative_to(paths.root)
-    line = _branches_index_entry(branch_name, as_id, today, description)
-    _append_to_branches_readme(paths.branches / "README.md", line)
+    line = _explorations_index_entry(branch_name, as_id, today, description)
+    _append_to_explorations_readme(paths.explorations / "README.md", line)
     try:
         commit(
             repo,
-            [paths.branches / "README.md"],
-            message=f"Open branch {branch_name}",
+            [paths.explorations / "README.md"],
+            message=f"Open exploration {branch_name}",
             author=get_user_identity(repo),
         )
     except CairnError as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from None
 
-    # 2. Create the new branch, switch to it, and add the manifest commit.
+    # 2. Create the new git branch, switch to it, and add the manifest commit.
     new_head = repo.create_head(branch_name)
     new_head.checkout()
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
@@ -138,7 +147,7 @@ def start(
         commit(
             repo,
             [manifest_path],
-            message=f"{branch_name}: open branch manifest",
+            message=f"{branch_name}: open exploration manifest",
             author=get_user_identity(repo),
         )
     except CairnError as exc:
@@ -146,18 +155,19 @@ def start(
         raise typer.Exit(code=1) from None
 
     typer.echo(
-        f"Opened branch '{branch_name}'. Manifest at {manifest_rel}. You are on the new branch."
+        f"Opened exploration '{branch_name}'. Manifest at {manifest_rel}. "
+        f"You are on the new git branch."
     )
 
 
 # --- close --------------------------------------------------------------------
 
 
-def _split_branch(name: str) -> tuple[str, str]:
-    """Return (owner, slug) for a branch named ``<owner>/<slug>``."""
+def _split_exploration_name(name: str) -> tuple[str, str]:
+    """Return (owner, slug) for an exploration named ``<owner>/<slug>``."""
     if "/" not in name:
         raise ValueError(
-            f"branch '{name}' is not a Cairn exploration branch (expected <owner>/<slug>)"
+            f"'{name}' is not a Cairn exploration name (expected <owner>/<slug>)"
         )
     owner, _, slug = name.partition("/")
     return owner, slug
@@ -207,7 +217,7 @@ def _closure_block(
     return "\n".join(lines)
 
 
-def _move_branches_readme_row(
+def _move_explorations_readme_row(
     readme_path: Path,
     branch_name: str,
     owner: str,
@@ -217,8 +227,8 @@ def _move_branches_readme_row(
 ) -> bool:
     """Remove ``branch_name``'s row from the active table and add it to the closed section.
 
-    Returns True if a row was actually removed (the branch was listed as active),
-    False otherwise. The closed section is created on demand.
+    Returns True if a row was actually removed (the exploration was listed as
+    active), False otherwise. The closed section is created on demand.
     """
     text = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
     needle = f"`{branch_name}`"
@@ -255,7 +265,7 @@ def _move_branches_readme_row(
 @app.command(name="close")
 def close(
     branch_name: str = typer.Argument(
-        ..., help="Branch to close, e.g. 'kyle/try-alt-loss'. Must be `<owner>/<slug>`."
+        ..., help="Exploration to close, e.g. 'kyle/try-alt-loss'. Must be `<owner>/<slug>`."
     ),
     status: str = typer.Option(
         ..., "--status", help="Outcome: 'merged' or 'abandoned'.", case_sensitive=False
@@ -266,7 +276,7 @@ def close(
     closed_by: str | None = typer.Option(
         None,
         "--closed-by",
-        help="Collaborator id closing the branch. "
+        help="Collaborator id closing the exploration. "
         "Defaults to the only collaborator if there is exactly one.",
     ),
     force: bool = typer.Option(
@@ -275,7 +285,7 @@ def close(
         help="Close even if the working tree has uncommitted changes.",
     ),
 ) -> None:
-    """Record the outcome of an exploration branch (merged or abandoned)."""
+    """Record the outcome of an exploration (merged or abandoned)."""
     paths = resolve_or_exit()
     status = status.lower()
     if status not in {"merged", "abandoned"}:
@@ -286,7 +296,7 @@ def close(
         raise typer.Exit(code=1)
 
     try:
-        owner, slug = _split_branch(branch_name)
+        owner, slug = _split_exploration_name(branch_name)
     except ValueError as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from None
@@ -309,7 +319,11 @@ def close(
 
     repo = Repo(paths.root)
     if branch_name not in [h.name for h in repo.heads]:
-        typer.echo(f"error: branch '{branch_name}' does not exist locally", err=True)
+        typer.echo(
+            f"error: exploration '{branch_name}' does not exist locally "
+            f"(no git branch by that name)",
+            err=True,
+        )
         raise typer.Exit(code=1)
 
     if not force and repo.is_dirty(untracked_files=False):
@@ -335,17 +349,17 @@ def close(
     active_branch_name = repo.active_branch.name if not repo.head.is_detached else None
     if active_branch_name != main_name:
         typer.echo(
-            f"error: switch to '{main_name}' before closing a branch "
+            f"error: switch to '{main_name}' before closing an exploration "
             f"(currently on '{active_branch_name or 'detached HEAD'}').",
             err=True,
         )
         raise typer.Exit(code=1)
 
-    manifest_rel = f"branches/{owner}/{slug}.md"
+    manifest_rel = f"explorations/{owner}/{slug}.md"
     manifest_text = _read_manifest(repo, branch_name, manifest_rel)
     if manifest_text is None:
         typer.echo(
-            f"error: no manifest found for '{branch_name}' "
+            f"error: no manifest found for exploration '{branch_name}' "
             f"(expected at {manifest_rel} on the branch or on {main_name})",
             err=True,
         )
@@ -365,8 +379,8 @@ def close(
     manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest_path.write_text(updated_manifest, encoding="utf-8")
 
-    readme_path = paths.branches / "README.md"
-    _move_branches_readme_row(
+    readme_path = paths.explorations / "README.md"
+    _move_explorations_readme_row(
         readme_path, branch_name, owner, closed_at, status, reason.strip()
     )
 
@@ -374,7 +388,7 @@ def close(
         commit(
             repo,
             [readme_path, manifest_path],
-            message=f"Close branch {branch_name} ({status}): {reason.strip()[:60]}",
+            message=f"Close exploration {branch_name} ({status}): {reason.strip()[:60]}",
             author=get_user_identity(repo),
         )
     except CairnError as exc:
@@ -382,6 +396,6 @@ def close(
         raise typer.Exit(code=1) from None
 
     typer.echo(
-        f"Closed '{branch_name}' as {status}. "
-        f"Manifest updated at {manifest_rel}; index updated in branches/README.md."
+        f"Closed exploration '{branch_name}' as {status}. "
+        f"Manifest updated at {manifest_rel}; index updated in explorations/README.md."
     )

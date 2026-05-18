@@ -27,7 +27,7 @@ def _make_minimal_template(tmp_path: Path) -> Path:
     (proj / ".gitignore").write_text("/scratch/\n")
     for d in ("state", "knowledge/meetings", "knowledge/findings",
               "knowledge/literature", "knowledge/provenance",
-              "skills", "branches"):
+              "skills", "explorations"):
         (proj / d).mkdir(parents=True)
     for f in ("decisions", "open_questions", "action_items", "goals", "collaborators"):
         (proj / "state" / f"{f}.yaml").write_text("[]\n")

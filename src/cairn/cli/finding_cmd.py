@@ -111,7 +111,7 @@ def add(
         raise typer.Exit(code=1)
 
     repo = Repo(paths.root)
-    branch = _current_branch(repo)
+    exploration = _current_branch(repo)
 
     try:
         validated = FindingFrontmatter.model_validate(
@@ -121,7 +121,7 @@ def add(
                 "title": title,
                 "slug": final_slug,
                 "related": related,
-                "branch": branch,
+                "exploration": exploration,
             }
         )
     except ValidationError as exc:

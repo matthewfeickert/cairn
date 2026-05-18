@@ -24,10 +24,10 @@ If the user says "undo", "drop that", "wait, fix X" → revise (use `git revert 
 | "I'll have X by Friday", "Maria can do Y", "I'll take that on" | Action item (`cairn action add`) |
 | "Turns out X", "we learned …", "interesting — X surprised me" | Finding (`cairn finding add`) |
 | "I wonder if …", "is it true that …", "what about …" | Open question (edit `state/open_questions.yaml`) |
-| "Let's try X on a branch" | Branch start (`cairn branch start`) |
+| "Let's track this as an exploration" | Exploration start (`cairn exploration start`). Note: "let's create a branch" in a project-repo context usually means a project-repo git branch, not a cairn exploration — confirm before invoking. |
 | "Shipped" / "done with X" / "that's complete" | Action complete (`cairn action complete`) |
 | "Ok let's wrap up", "good place to stop", "I have to go" | Trigger the `debrief` skill |
-| "We're abandoning this", "merged that" | Branch close (`cairn branch close`) |
+| "We're abandoning that exploration", "merged that exploration" | Exploration close (`cairn exploration close`) |
 
 These are heuristics, not rules. When in doubt, capture, and let the user revise — over-capture is recoverable noise, under-capture is lost project memory.
 
@@ -37,7 +37,7 @@ These are heuristics, not rules. When in doubt, capture, and let the user revise
 - **Don't try to capture everything.** Small talk, debugging chatter, intermediate tool output don't belong in the substrate. Capture what a future collaborator would want to know.
 - **Don't fabricate.** If something is genuinely ambiguous, ask once: *"I'd record this as D-NNN: '<your one-line summary>' — sound right?"* If they say no, drop it.
 - **Don't attribute captures to yourself.** Findings, decisions, action items belong to the humans they came from. The CLI handles attribution via the configured git identity.
-- **Don't capture on main if the user is on an exploration branch.** Captures land on the current branch by default; the CLI does the right thing.
+- **Don't capture on main if the user is on an exploration.** Captures land on the current git branch by default; the CLI does the right thing.
 
 ## The debrief
 
