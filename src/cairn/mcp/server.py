@@ -196,7 +196,16 @@ def build_server() -> FastMCP:
             result = result[:limit]
         return result
 
-    @mcp.tool(description="List action items for a cairn, optionally filtered.")
+    @mcp.tool(
+        description=(
+            "List action items for a cairn, optionally filtered. "
+            "`status` accepts: 'open', 'complete', 'cancelled', or omit "
+            "for all. `due_before` is an ISO calendar date (YYYY-MM-DD). "
+            "Note: action `status` (the completion state) is a different "
+            "axis from the time-bucket breakdown surfaced in `status` "
+            "(overdue / due_this_week / upcoming / no_due_date)."
+        )
+    )
     def get_action_items(
         cairn: str | None = None,
         assignee: str | None = None,
@@ -225,10 +234,18 @@ def build_server() -> FastMCP:
 
     @mcp.tool(
         description=(
-            "Record a decision in the cairn (mirrors `cairn decision add`). "
+            "Record a **decision** — a commitment with rationale ('we will "
+            "do X because Y'). Use when the user surfaces a choice the team "
+            "has made, even tentatively. Distinct from a *finding* (an "
+            "observed fact), an *open question* (uncertainty), and an "
+            "*action item* (assigned pending work). Open questions are "
+            "typically resolved by a decision; findings often motivate "
+            "decisions. Mirrors `cairn decision add`.\n\n"
             "`related` is a list of canonical entity IDs (e.g., ['D-003', "
-            "'Q-007', 'A-014']) — NOT finding paths or slugs. Each must "
-            "resolve in the cairn or the call fails."
+            "'Q-007', 'A-014']) — NOT finding paths or slugs and NOT "
+            "collaborator ids. Each must resolve in the cairn or the call "
+            "fails. (Findings can't yet appear in `related` — see the "
+            "recommendations doc.)"
         )
     )
     def add_decision(
@@ -290,7 +307,17 @@ def build_server() -> FastMCP:
         }
 
     @mcp.tool(
-        description="Add a finding to the cairn (mirrors `cairn finding add`)."
+        description=(
+            "Record a **finding** — an observed fact or learned constraint "
+            "('we discovered X', 'turns out Y', 'measurement showed Z'). "
+            "Use when the user surfaces empirical learning, not a "
+            "commitment (decision), uncertainty (open question), or "
+            "assignment (action item). Findings often motivate decisions. "
+            "Mirrors `cairn finding add`.\n\n"
+            "`related` is a list of canonical entity IDs (e.g., ['D-003', "
+            "'Q-007', 'G-002']) — same constraint as add_decision. Each "
+            "must resolve in the cairn."
+        )
     )
     def add_finding(
         author: str,
@@ -360,7 +387,17 @@ def build_server() -> FastMCP:
             "exploration": exploration,
         }
 
-    @mcp.tool(description="Add an action item (mirrors `cairn action add`).")
+    @mcp.tool(
+        description=(
+            "Record an **action item** — assigned pending work, optionally "
+            "with a due date ('P owes W by D'). Use when the user commits "
+            "someone to a piece of follow-up work. Distinct from decisions "
+            "(commitments with rationale) and findings (observed facts). "
+            "Complete with `complete_action`. Mirrors `cairn action add`.\n\n"
+            "`related` is a list of canonical entity IDs; same constraint "
+            "as add_decision."
+        )
+    )
     def add_action(
         text: str,
         assignee: str,
@@ -501,8 +538,15 @@ def build_server() -> FastMCP:
 
     @mcp.tool(
         description=(
-            "Record an open question (mirrors a CLI command not yet shipped). "
-            "Use when the user surfaces something to investigate or decide."
+            "Record an **open question** — uncertainty awaiting resolution "
+            "('we don't yet know X', 'is it true that Y?', 'should we Z?'). "
+            "Use when the user surfaces something to investigate or decide. "
+            "Distinct from a *decision* (commitment), *finding* (observed "
+            "fact), and *action item* (assigned work). Resolved with "
+            "`resolve_open_question`, typically pointing at the decision "
+            "that answered it.\n\n"
+            "`related` is a list of canonical entity IDs; same constraint "
+            "as add_decision."
         )
     )
     def add_open_question(
@@ -546,10 +590,98 @@ def build_server() -> FastMCP:
             "commit_sha": sha[:12],
         }
 
+    # ---- Project semantics (overview / current focus / related repos) -----
+    #
+    # These are the preferred surface for narrative project content. Each
+    # operates on a single semantic section; the underlying storage (today,
+    # sections of PROJECT.md; tomorrow, possibly separate files) is hidden.
+    # See the get_project_md / set_project_md pair below for the escape
+    # hatch.
+
     @mcp.tool(
         description=(
-            "Return the cairn's PROJECT.md content (project overview, current "
-            "focus, related repositories, etc.)."
+            "Return the project's one-or-two-paragraph **Overview** — what "
+            "this project is about, who's on it, what stage it's in. "
+            "Returns empty string if the section is missing."
+        )
+    )
+    def get_project_overview(cairn: str | None = None) -> dict[str, Any]:
+        return _get_project_section(cairn, "Overview")
+
+    @mcp.tool(
+        description=(
+            "Replace the project's **Overview** section. Commits with "
+            "attribution. Use read-modify-write: call get_project_overview "
+            "first if you need the existing prose; otherwise just write."
+        )
+    )
+    def set_project_overview(
+        author: str,
+        content: str,
+        cairn: str | None = None,
+    ) -> dict[str, Any]:
+        return _set_project_section(cairn, "Overview", content, author)
+
+    @mcp.tool(
+        description=(
+            "Return the **Current focus** section — 2 to 4 items describing "
+            "what the team is actively working on now. This is the section "
+            "that changes most often. Empty string if missing."
+        )
+    )
+    def get_current_focus(cairn: str | None = None) -> dict[str, Any]:
+        return _get_project_section(cairn, "Current focus")
+
+    @mcp.tool(
+        description=(
+            "Replace the project's **Current focus** section. Use when the "
+            "team's active work has shifted. Higher change cadence than "
+            "Overview, so prefer narrow updates here over editing the whole "
+            "project narrative."
+        )
+    )
+    def set_current_focus(
+        author: str,
+        content: str,
+        cairn: str | None = None,
+    ) -> dict[str, Any]:
+        return _set_project_section(cairn, "Current focus", content, author)
+
+    @mcp.tool(
+        description=(
+            "Return the **Related repositories** section — a free-form "
+            "markdown list of the project's working code / data / paper "
+            "repos. Structured cross-references (decisions/findings → "
+            "commit SHA) are future work; for now this is prose."
+        )
+    )
+    def get_related_repositories(cairn: str | None = None) -> dict[str, Any]:
+        return _get_project_section(cairn, "Related repositories")
+
+    @mcp.tool(
+        description=(
+            "Replace the **Related repositories** section. Use when a new "
+            "code/data/paper repo joins the project or an existing one "
+            "moves."
+        )
+    )
+    def set_related_repositories(
+        author: str,
+        content: str,
+        cairn: str | None = None,
+    ) -> dict[str, Any]:
+        return _set_project_section(cairn, "Related repositories", content, author)
+
+    # ---- Escape hatch: full PROJECT.md ------------------------------------
+
+    @mcp.tool(
+        description=(
+            "Escape hatch: return the cairn's PROJECT.md content verbatim. "
+            "Prefer the semantic tools (get_project_overview, "
+            "get_current_focus, get_related_repositories) — they hide the "
+            "storage shape and won't break if PROJECT.md is later split "
+            "into multiple files. Use this only when you need the whole "
+            "document, e.g., for human review."
         )
     )
     def get_project_md(cairn: str | None = None) -> dict[str, Any]:
@@ -564,12 +696,12 @@ def build_server() -> FastMCP:
 
     @mcp.tool(
         description=(
-            "Overwrite the cairn's PROJECT.md with new content. Commits the "
-            "change attributed to the given author. Use the standard "
-            "read-modify-write pattern: call get_project_md first, modify the "
-            "content locally, then call this. There is no section-level edit "
-            "API — overwrite is intentional so the agent always reasons about "
-            "the whole document."
+            "Escape hatch: overwrite the cairn's PROJECT.md verbatim. "
+            "**Prefer the semantic setters** (set_project_overview, "
+            "set_current_focus, set_related_repositories) for normal "
+            "edits — they preserve sections you don't intend to touch and "
+            "won't surface here once PROJECT.md is split into files. Use "
+            "this only when you need to rewrite the whole document at once."
         )
     )
     def set_project_md(
@@ -593,6 +725,53 @@ def build_server() -> FastMCP:
         return {
             "cairn": entry.name,
             "path": str(paths.project_md.relative_to(paths.root)),
+            "commit_sha": sha[:12],
+        }
+
+    # ---- Helpers shared by the semantic project tools ---------------------
+
+    def _get_project_section(cairn_name: str | None, section: str) -> dict[str, Any]:
+        from .. import project_md as pm
+
+        entry, paths = _resolve(cairn_name)
+        if not paths.project_md.is_file():
+            return {"cairn": entry.name, "section": section, "exists": False, "content": ""}
+        text = paths.project_md.read_text(encoding="utf-8")
+        content = pm.get_section(text, section)
+        return {
+            "cairn": entry.name,
+            "section": section,
+            "exists": content is not None,
+            "content": content or "",
+        }
+
+    def _set_project_section(
+        cairn_name: str | None, section: str, content: str, author: str
+    ) -> dict[str, Any]:
+        from .. import project_md as pm
+
+        entry, paths = _resolve(cairn_name)
+        _validate_author(paths, author)
+        existing = (
+            paths.project_md.read_text(encoding="utf-8")
+            if paths.project_md.is_file()
+            else ""
+        )
+        if not existing:
+            # Seed a minimal PROJECT.md with the H1 from the cairn name.
+            existing = f"# {entry.name}\n\n"
+        updated = pm.set_section(existing, section, content)
+        paths.project_md.write_text(updated, encoding="utf-8")
+        repo = Repo(paths.root)
+        sha = commit(
+            repo,
+            [paths.project_md],
+            message=f"Update {section} in PROJECT.md",
+            author=get_user_identity(repo),
+        )
+        return {
+            "cairn": entry.name,
+            "section": section,
             "commit_sha": sha[:12],
         }
 
@@ -841,6 +1020,8 @@ def build_server() -> FastMCP:
         return {
             "cairn": entry.name,
             "name": branch_name,
+            "branch_name": branch_name,
+            "merge_state": "active",
             "manifest": str(manifest_path.relative_to(paths.root)),
             "commit_sha": sha[:12],
         }

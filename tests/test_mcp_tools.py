@@ -282,6 +282,51 @@ def test_unknown_author_message_points_at_mcp_tool(cairn_root: Path):
         )
 
 
+def test_semantic_project_section_round_trip(cairn_root: Path):
+    """Each project section is independently readable and writable."""
+    # Overview
+    out = _call("get_project_overview", {})
+    assert out["exists"] is True  # template ships with placeholder content
+    upd = _call(
+        "set_project_overview",
+        {"author": "kyle", "content": "Brand new overview body."},
+    )
+    assert "commit_sha" in upd
+    got = _call("get_project_overview", {})
+    assert "Brand new overview body." in got["content"]
+
+    # Current focus stays untouched
+    cf = _call("get_current_focus", {})
+    assert cf["exists"] is True
+
+    # Updating current focus doesn't disturb overview
+    _call(
+        "set_current_focus",
+        {"author": "kyle", "content": "- item A\n- item B"},
+    )
+    overview2 = _call("get_project_overview", {})
+    assert "Brand new overview body." in overview2["content"]
+    focus2 = _call("get_current_focus", {})
+    assert "item A" in focus2["content"]
+
+
+def test_semantic_setter_rejects_unknown_author(cairn_root: Path):
+    with pytest.raises(Exception, match="unknown author"):
+        _call(
+            "set_project_overview",
+            {"author": "ghost", "content": "x"},
+        )
+
+
+def test_start_exploration_returns_branch_name_and_merge_state(cairn_root: Path):
+    out = _call(
+        "start_exploration",
+        {"description": "test branch info", "as_id": "kyle"},
+    )
+    assert out["branch_name"] == "kyle/test-branch-info"
+    assert out["merge_state"] == "active"
+
+
 def test_get_action_items_filters_by_assignee(cairn_root: Path):
     # Pre-add two actions, one for kyle, one for maria
     runner.invoke(
