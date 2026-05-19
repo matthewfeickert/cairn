@@ -6,7 +6,7 @@
 
 ## Overview
 
-Cairn is a tool and design standard for hybrid human/AI research collaboration. It defines a repository structure, file schemas, branching conventions, and patterns for treating human and AI contributors uniformly. Around these conventions, Cairn provides a Python package for scaffolding and managing project instances, plus reference patterns for layered augmentations like MCP servers, meeting capture, and AI collaborators.
+Cairn is a tool and design standard for hybrid human/AI research collaboration. It defines a repository structure, file schemas, exploration conventions, and patterns for treating human and AI contributors uniformly. Around these conventions, Cairn provides a Python package for scaffolding and managing project instances, plus reference patterns for layered augmentations like MCP servers, meeting capture, and AI collaborators.
 
 A research project using Cairn is concretely a git repository organized following these conventions — *a cairn*. There is one cairn per project; the framework lives in the patterns and tooling, not in any centralized service.
 
@@ -68,7 +68,7 @@ This is sufficient for most small research groups for a surprisingly long time. 
 
 ![Figure 2: With MCP Server](figures/fig2-mcp-server.svg)
 
-When the project grows past what direct file access handles well — when there's a year of meeting notes to search, or when queries like "find prior discussions related to this new finding" start being slow as plain reads — add an MCP server alongside the repo. The MCP server reads from the repo (it does not own state), maintains a derived vector index for semantic search, and exposes a curated set of semantic tools to client agents. Tools are named for the lab's actual ways of slicing the project ("get_decisions_about", "find_related_prior_discussion", "summarize_branch") rather than as a generic search interface, so the calling agent knows when to use each.
+When the project grows past what direct file access handles well — when there's a year of meeting notes to search, or when queries like "find prior discussions related to this new finding" start being slow as plain reads — add an MCP server alongside the repo. The MCP server reads from the repo (it does not own state), maintains a derived vector index for semantic search, and exposes a curated set of semantic tools to client agents. Tools are named for the lab's actual ways of slicing the project ("get_decisions_about", "find_related_prior_discussion", "summarize_exploration") rather than as a generic search interface, so the calling agent knows when to use each.
 
 Critically, this is purely additive. The repo remains the source of truth. The MCP server can be added later, replaced later, or removed entirely without altering the substrate. Collaborators can use it or not on a per-session basis.
 
@@ -162,19 +162,21 @@ Among the standards and conventions currently emerging or competing in this spac
 
 The relationship to neighboring folders: `findings/` records what the group has learned; `provenance/` records the audit trail behind those findings — how they were arrived at, what data and methods were used, which agents contributed, and how to reproduce them.
 
-There is a natural complementarity between Cairn and these standards. Cairn captures the *living* state of a project — meetings, decisions, branches, day-to-day work, the messy accretion of a group's reasoning over time. Standards like ASTRA and ARA capture *crystallized* records of specific results, structured for vetting and external review. Both rest on the same foundational commitment: the substrate should be a specification, not a platform, so that an ecosystem of tools can grow around it. Specific points of resonance: ARA's exploration graph corresponds to Cairn's branches and decisions; ARA's provenance tags echo Cairn's collaborator attribution; ASTRA's three properties (provenance-certification, observability, legibility) are properties Cairn aspires to in its own working state, even as Cairn's scope (the living project) differs from ASTRA's (a vetted analysis). The `cairn` Python package may eventually grow utilities for exporting parts of a cairn into ASTRA, ARA, RO-Crate, or similar formats.
+There is a natural complementarity between Cairn and these standards. Cairn captures the *living* state of a project — meetings, decisions, explorations, day-to-day work, the messy accretion of a group's reasoning over time. Standards like ASTRA and ARA capture *crystallized* records of specific results, structured for vetting and external review. Both rest on the same foundational commitment: the substrate should be a specification, not a platform, so that an ecosystem of tools can grow around it. Specific points of resonance: ARA's exploration graph corresponds to Cairn's explorations and decisions; ARA's provenance tags echo Cairn's collaborator attribution; ASTRA's three properties (provenance-certification, observability, legibility) are properties Cairn aspires to in its own working state, even as Cairn's scope (the living project) differs from ASTRA's (a vetted analysis). The `cairn` Python package may eventually grow utilities for exporting parts of a cairn into ASTRA, ARA, RO-Crate, or similar formats.
 
 Because the standards in this space are competing and evolving, the internal structure of `provenance/` is intentionally unspecified. Each output can carry whatever artifact format best fits the venue's norms at the time. The convention is only that the artifacts live here, alongside the findings they substantiate.
 
-## Branching Workflow
+## Explorations Workflow
 
-![Figure 4: Branching Workflow](figures/fig4-branches.svg)
+![Figure 4: Explorations Workflow](figures/fig4-branches.svg)
 
-Anyone can create a branch. Branches contain proposed additions or revisions to project state — new findings, alternative decisions, exploratory analyses. The knowledge base (meeting notes, prior findings) is shared across branches; only the interpretive and forward-looking layer diverges.
+An **exploration** is a tracked alternative line of project inquiry — a parallel investigation, methodology choice, or design alternative whose rationale is worth preserving alongside the result. Anyone can start one. An exploration's contents are proposed additions or revisions to project state — new findings, alternative decisions, exploratory analyses — diverging from `main` while the shared knowledge base (meeting notes, prior findings) remains visible across all explorations.
 
-Merges happen via pull request. For pure additions (new findings, new references), merge can be routine. For overrides (a branch proposes revising a decision on main), merge needs review — ideally surfacing on a meeting agenda where the group discusses what to accept. Merge proposals become an artifact in their own right, recording how the group reasoned through alternatives.
+Under the hood, an exploration is a git branch in the cairn repo plus an `explorations/<name>.md` manifest recording why it exists. Cairn deliberately uses a different word, though: in a session opened inside a project's *code* repository, "let's create a branch" almost always means a git branch in that project codebase, and overloading the same term for a cairn-level tracking concept caused real confusion in early UX testing. The user's existing meaning wins; the cairn concept gets a different word. See [ADR-0008](docs/decisions/0008-client-server-and-exploration-rename.md) for the full rationale.
 
-Branches don't need to merge to be valuable. An exploratory branch that didn't pan out is itself useful project history — a record of what was tried and why it was set aside.
+Closing an exploration happens via pull request. For pure additions (new findings, new references) the merge can be routine. For overrides (an exploration proposes revising a decision on main) the merge needs review — ideally surfacing on a meeting agenda where the group discusses what to accept. The merge proposal becomes an artifact in its own right, recording how the group reasoned through alternatives.
+
+Explorations don't need to merge to be valuable. One that didn't pan out is itself useful project history — a record of what was tried and why it was set aside.
 
 ## Collaborators
 
@@ -210,12 +212,12 @@ A simpler initial path: import Zoom AI Companion summaries by hand or via a smal
 
 ## AI Collaborators
 
-AI collaborators are first-class participants. Each has an identity in `state/collaborators.yaml`, writes to its own dedicated branches, and submits contributions through a review queue rather than directly to main. Examples worth building:
+AI collaborators are first-class participants. Each has an identity in `state/collaborators.yaml`, writes to its own dedicated explorations, and submits contributions through a review queue rather than directly to main. Examples worth building:
 
-- **Literature monitor**: watches arXiv categories relevant to the project, submits findings to a dedicated branch on a weekly schedule
+- **Literature monitor**: watches arXiv categories relevant to the project, submits findings to a dedicated exploration on a weekly schedule
 - **Critic agent**: on demand, reviews open decisions and surfaces potential weaknesses or unconsidered alternatives
 - **Reproducibility checker**: periodically re-runs key experiments from the codebase snapshot, flags drift
-- **Idea generator**: given current open questions, generates candidate approaches as branch proposals
+- **Idea generator**: given current open questions, generates candidate approaches as exploration proposals
 
 The natural starting point is the literature monitor: high value, low risk, easy to evaluate, and gives the group experience with AI contributions in a contained way before adding more.
 
@@ -233,7 +235,7 @@ The phasing below tracks the actual execution plan. (An earlier draft of this se
 Canonical cairn template at `templates/default/`, Pydantic v2 schemas for the five state files, and the CLI commands `cairn init`, `cairn collaborator add`, `cairn decision add`, `cairn validate`, `cairn status`. Covers user stories US-P-01 through US-P-06. The Python package is the canonical tooling for creating and working with cairns; cookiecutter-style templates remain supported via `cairn init --template <path-or-url>`.
 
 ### Phase 1 — Agent skills + supporting commands *(current)*
-Make a cairn useful inside a Claude Code session by bundling `SKILL.md` files in `templates/default/skills/` (the standard Claude Code skill format), and add the small set of CLI primitives those skills need. Target stories: US-A-01 (orient at session start), US-A-03 (create an exploration branch — requires `cairn exploration start`), US-A-04 (mark an action item complete — requires `cairn action add` and `cairn action complete`), US-A-05 (search prior discussions). Skills land at the framework level and ship into new cairns through `cairn init`.
+Make a cairn useful inside a Claude Code session by bundling `SKILL.md` files in `templates/default/skills/` (the standard Claude Code skill format), and add the small set of CLI primitives those skills need. Target stories: US-A-01 (orient at session start), US-A-03 (create an exploration — requires `cairn exploration start`), US-A-04 (mark an action item complete — requires `cairn action add` and `cairn action complete`), US-A-05 (search prior discussions). Skills land at the framework level and ship into new cairns through `cairn init`.
 
 ### Phase 2 — Python package extensions
 Meeting import (US-P-07), artifact export to ASTRA / ARA / RO-Crate (US-P-08), and agenda draft (US-P-09). Also other small helpers as patterns settle.
@@ -269,7 +271,7 @@ A few decisions worth recording for future reference:
 A few things to figure out as the system grows:
 
 - What's the right cadence for the literature monitor to surface findings without overwhelming the group?
-- How should branches that go dormant be archived without losing their record?
+- How should explorations that go dormant be archived without losing their record?
 - What permissions model handles the realistic case of guest collaborators (visiting students, external co-authors)?
 - For multi-project use, how should skills and AI collaborators be shared across projects vs. scoped to one?
 
