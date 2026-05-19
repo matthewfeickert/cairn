@@ -577,12 +577,13 @@ def build_server() -> FastMCP:
             "- `human` (default) — a person, attributed via git authorship.\n"
             "- `ai-collaborator` — a configured AI agent with its own "
             "identity (literature monitor, critique agent, etc.).\n"
-            "- `virtual` — a placeholder identity for observations that "
-            "don't have a single authoring human or AI. Use for "
-            "retroactive bootstrap attribution (`id=\"repo-history\"` "
-            "for findings extracted from docs / TODO markers / commit "
-            "history) and for consensus / group / meeting-derived "
-            "authorship until proper multi-author schema lands."
+            "- `group` — a named multi-person aggregate (`consensus`, "
+            "`core-team`). Use when authorship is shared and no single "
+            "human is the primary author.\n"
+            "- `unknown` — explicit \"we don't know who authored this\" "
+            "placeholder. The `bootstrap_from_repo` skill uses "
+            "`id=\"repo-history\"` for findings extracted from project "
+            "docs / TODO markers / commit history."
         )
     )
     def add_collaborator(

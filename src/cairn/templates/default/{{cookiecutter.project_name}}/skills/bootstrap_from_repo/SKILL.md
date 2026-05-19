@@ -66,14 +66,14 @@ Many bootstrap-derived findings are observations the agent made from the repo's 
 
 The right pattern, until proper multi-author or meeting-linkage schema lands (see `docs/open-questions.md`):
 
-1. **Register a virtual collaborator first**, once per cairn:
+1. **Register an "unknown" placeholder collaborator first**, once per cairn:
 
    ```
    add_collaborator(
      id="repo-history",
      name="Repository history",
      role="bootstrap-attribution placeholder for observations extracted from project docs / commit history",
-     type="virtual",
+     type="unknown",
    )
    ```
 
