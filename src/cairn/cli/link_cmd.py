@@ -21,6 +21,7 @@ from pathlib import Path
 import typer
 
 from ..cairn_toml import POINTER_FILE, CairnTomlError, write_pointer
+from ..mcp.remote import probe
 from ..paths import is_cairn_root, resolve_cairn
 from ..registry import lookup
 from ._common import resolve_or_exit
@@ -89,7 +90,6 @@ def link(
             raise typer.Exit(code=1)
 
         if not no_probe:
-            from ..mcp.remote import probe
             reachable = probe(endpoint, timeout=10)
             if not reachable:
                 typer.echo(
