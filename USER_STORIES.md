@@ -145,6 +145,50 @@ The `cairn` Python package is the canonical tooling for creating and managing ca
 
 ---
 
+### US-P-11: Serve a cairn (or many) over HTTP
+
+**Actor**: Operator hosting an MCP server for themselves or a group.
+
+**Story**: As an operator, I want to expose the MCP server over HTTP so multiple Claude Code sessions and background agents can share one running server.
+
+**Expected behavior**
+- `cairn mcp --transport {stdio,streamable-http,sse}` selects the transport; default stays `stdio` so existing setups continue unchanged. HTTP is strictly opt-in.
+- HTTP mode accepts `--host` (default `127.0.0.1`), `--port` (default `8765`), `--path` (default `/mcp`).
+- The tool surface (Tier-1/2/3 from ADR-0009) is identical across transports — same names, parameters, return shapes.
+- Default binding `127.0.0.1` keeps the trust surface the same as stdio. Binding `0.0.0.0` is allowed but the help text names the tradeoff.
+- A typo'd `--transport` value fails fast with a CLI error before any SDK import.
+
+---
+
+### US-P-12: Pair a project repo with a remote cairn
+
+**Actor**: Collaborator on a project whose cairn is served by an HTTP MCP node off-machine.
+
+**Story**: As a user with a project repo and a remote MCP server's URL, I want to record the pairing in the project repo so my agent (and my CLI) can reach the right cairn without re-configuring it.
+
+**Expected behavior**
+- `cairn link --endpoint <url> --name <cairn>` writes a remote-mode `cairn.toml` and prints client-neutral pairing info (endpoint + cairn name + the credential setup hints).
+- `cairn.toml` supports three explicit modes: local-path (`path` only), local-registry (`name` only), remote-MCP (`endpoint + name`). The dead "endpoint alone" shape is explicitly rejected.
+- `cairn link --endpoint <url>` probes the URL once and reports reachability before writing. A `--no-probe` escape hatch exists for offline pairing.
+- Pairing travels with the repo. Credentials do not.
+
+---
+
+### US-P-13: Write to a remote cairn from the CLI
+
+**Actor**: Human collaborator working in a project repo paired with a remote cairn, without an MCP-capable agent attached.
+
+**Story**: As a contributor, I want `cairn decision add`, `cairn finding add`, `cairn action add`, and `cairn action complete` to work against a remote-mode project repo the same way they work locally. Remote mode must not silently strip humans of the file-shaped interface, breaking the substrate-as-specification commitment.
+
+**Expected behavior**
+- In a project repo with a remote-mode `cairn.toml`, the four Tier-1 write commands transparently dispatch over HTTP. No CLI shape changes.
+- Credentials: `CAIRN_BEARER_TOKEN` env var first; then `~/.config/cairn/credentials.toml` keyed by endpoint URL (mode `0600` enforced on write). Never in `cairn.toml`, never committed.
+- **Read-after-write confirmation (m13v)**: each remote write echoes the server-resolved cairn name and new entity ID back to the CLI (e.g., `"Recorded D-001 in cairn 'my-cairn' at https://…"`). This guards against a wrong `name` in `cairn.toml` silently writing to the wrong cairn — the server's resolved handle is shown, not the local pointer's string.
+- Failures are CLI-shaped. Missing token: credential setup hint. HTTP 401/403: "authentication failed". Network unreachable: distinct from remote validation errors.
+- Reads are out of scope for this slice; `cairn status` against a remote-mode repo continues to error.
+
+---
+
 ## §2 — Agent / Skill Stories
 
 These stories cover agents (typically Claude Code, but the patterns generalize) interacting with a local cairn through skills. Each skill is a `SKILL.md` file in the cairn's `skills/` directory or in an agent's globally-installed skills.

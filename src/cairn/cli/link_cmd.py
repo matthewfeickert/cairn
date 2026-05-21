@@ -1,14 +1,17 @@
 """`cairn link [<project-repo>]` — pair a project repo with a cairn.
 
 Writes a ``cairn.toml`` at the project repo root so agents working inside
-the project repo can discover the paired cairn via cwd-walk. See ADR-0006
-and ADR-0010.
+the project repo can discover the paired cairn via cwd-walk. See ADR-0006,
+ADR-0010, and ADR-0012.
 
-Two modes:
-- ``--name <cairn-name>`` (preferred): looks up the cairn in the user's
-  MCP registry. Run from anywhere — typically inside the project repo.
-- No ``--name`` (path-based fallback): resolves the cairn from cwd-walk.
+Three modes:
+- ``--name <handle>`` (local-registry): looks up the cairn in the user's
+  local MCP registry. Run from anywhere — typically inside the project repo.
+- No flags (local-path fallback): resolves the cairn from cwd-walk.
   Run from inside the cairn directory.
+- ``--endpoint <url> --name <handle>`` (remote-MCP): records an HTTP MCP
+  server URL plus the cairn's handle on that server. Pairing travels with
+  the repo; credentials do not.
 """
 
 from __future__ import annotations
@@ -35,13 +38,28 @@ def link(
         None,
         "--name",
         help=(
-            "The handle you chose for this cairn when running "
-            "`cairn register <handle> <path>` (not the cairn's directory "
-            "name — the registry handle, which is whatever short name "
-            "you picked). Looking it up in the MCP registry; works from "
-            "anywhere. If omitted, the cairn is linked by relative path "
-            "and the command must be run from inside the cairn directory."
+            "The cairn handle. For local-registry mode: the name you used with "
+            "`cairn register <handle> <path>`. For remote-MCP mode (with "
+            "--endpoint): the cairn handle on the remote server. "
+            "If omitted and --endpoint is not given, the cairn is linked by "
+            "relative path from the cairn directory."
         ),
+    ),
+    endpoint: str | None = typer.Option(
+        None,
+        "--endpoint",
+        help=(
+            "HTTP MCP server URL for remote-MCP mode (e.g. "
+            "https://mcp.example.com/mcp). Must be combined with --name. "
+            "Pairing is stored in cairn.toml (safe to commit). "
+            "Credentials are stored separately — see CAIRN_BEARER_TOKEN "
+            "or ~/.config/cairn/credentials.toml."
+        ),
+    ),
+    no_probe: bool = typer.Option(
+        False,
+        "--no-probe",
+        help="Skip the connectivity check before writing the pointer (remote-MCP mode).",
     ),
     force: bool = typer.Option(
         False,
@@ -61,6 +79,48 @@ def link(
         )
         raise typer.Exit(code=1)
 
+    # --- Remote-MCP mode: --endpoint + --name --------------------------------
+    if endpoint is not None:
+        if name is None:
+            typer.echo(
+                "error: --endpoint requires --name (the cairn handle on the remote server).",
+                err=True,
+            )
+            raise typer.Exit(code=1)
+
+        if not no_probe:
+            from ..mcp.remote import probe
+            reachable = probe(endpoint, timeout=10)
+            if not reachable:
+                typer.echo(
+                    f"error: could not reach {endpoint}. "
+                    f"Check the URL and network, or pass --no-probe to skip this check.",
+                    err=True,
+                )
+                raise typer.Exit(code=1)
+
+        try:
+            written = write_pointer(project, endpoint=endpoint, name=name)
+        except CairnTomlError as exc:
+            typer.echo(f"error: {exc}", err=True)
+            raise typer.Exit(code=1) from None
+
+        typer.echo(f"Linked {project} → remote cairn '{name}' at {endpoint}.")
+        typer.echo(f"Wrote {written}.")
+        typer.echo(
+            "\nCredentials are NOT stored in cairn.toml. Set them via:\n"
+            "  export CAIRN_BEARER_TOKEN=<your-token>   # env var (any session)\n"
+            "  # or add to ~/.config/cairn/credentials.toml:\n"
+            f'  [endpoints."{endpoint}"]\n'
+            "  token = \"<your-token>\"\n"
+            "\nTo register the remote server with Claude Code:\n"
+            f"  claude mcp add cairn-remote -- cairn mcp --transport streamable-http\n"
+            "  # or point directly at the remote if it's always-on:\n"
+            f"  claude mcp add cairn-remote <URL>"
+        )
+        return
+
+    # --- Local-registry mode: --name only ------------------------------------
     if name is not None:
         existing = lookup(name)
         if existing is None:
@@ -89,14 +149,10 @@ def link(
         )
         return
 
-    # No --name: link by relative path. Requires cwd-walk to find the cairn.
-    # If the project_repo argument was given and IS a cairn, treat that as the
-    # cairn-side argument and require an explicit --name — refusing because the
-    # user likely got the argument order wrong.
+    # --- Local-path fallback: no flags, cwd-walk to find cairn ---------------
     try:
         cairn_paths = resolve_or_exit()
     except SystemExit:
-        # resolve_or_exit already echoed the error; add guidance and re-exit.
         typer.echo(
             "hint: pass --name <registered-cairn> to link without being inside "
             "the cairn directory. See `cairn registered`.",
@@ -104,8 +160,6 @@ def link(
         )
         raise typer.Exit(code=2) from None
 
-    # If the user is linking from inside the same directory they're trying to
-    # link, surface that.
     if project == cairn_paths.root.resolve():
         typer.echo(
             f"error: refusing to link a cairn ({cairn_paths.root}) to itself. "

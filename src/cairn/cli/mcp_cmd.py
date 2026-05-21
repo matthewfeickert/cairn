@@ -1,13 +1,14 @@
-"""`cairn mcp` — run the MCP server over stdio.
+"""`cairn mcp` — run the MCP server over stdio or HTTP.
 
-See ADR-0009 and ADR-0010. Requires the ``[mcp]`` install extra.
+See ADR-0009, ADR-0010, and ADR-0012. Requires the ``[mcp]`` install extra.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-
 import typer
+
+_VALID_TRANSPORTS = ("stdio", "streamable-http", "sse")
 
 
 def mcp(
@@ -32,10 +33,45 @@ def mcp(
             "Defaults to the directory basename (minus a `-cairn` suffix)."
         ),
     ),
+    transport: str = typer.Option(
+        "stdio",
+        "--transport",
+        help=(
+            "Transport to use: 'stdio' (default, for claude mcp add), "
+            "'streamable-http' (long-running HTTP server), or 'sse' (SSE HTTP). "
+            "stdio keeps the same trust surface as before. "
+            "HTTP is opt-in; default binding is 127.0.0.1 (safe for single-user). "
+            "Binding 0.0.0.0 expands the trust surface — use a reverse proxy "
+            "with auth for group deployments."
+        ),
+    ),
+    host: str = typer.Option(
+        "127.0.0.1",
+        "--host",
+        help="Host to bind for HTTP transports (default: 127.0.0.1).",
+    ),
+    port: int = typer.Option(
+        8765,
+        "--port",
+        help="Port to listen on for HTTP transports (default: 8765).",
+    ),
+    path: str = typer.Option(
+        "/mcp",
+        "--path",
+        help="URL path for the MCP endpoint in HTTP transports (default: /mcp).",
+    ),
 ) -> None:
-    """Run the MCP server over stdio (Tier-1 tools)."""
+    """Run the MCP server over stdio (default) or HTTP."""
+    if transport not in _VALID_TRANSPORTS:
+        typer.echo(
+            f"error: invalid --transport '{transport}'. "
+            f"Valid values: {', '.join(_VALID_TRANSPORTS)}.",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
     try:
-        from ..mcp.server import run
+        from ..mcp.server import build_server, _ensure_registry_loadable
     except ImportError as exc:
         typer.echo(
             f"error: MCP server requires the [mcp] extra. "
@@ -71,22 +107,27 @@ def mcp(
         def patched_load_registry(*args, **kwargs):  # type: ignore[no-untyped-def]
             return combined
 
-        # The server captured the symbol from cairn.registry at import time —
-        # patch it there so tools see the ad-hoc entry too.
         import cairn.registry as registry_mod
 
         server_module.load_registry = patched_load_registry  # type: ignore[assignment]
         registry_mod.load_registry = patched_load_registry  # type: ignore[assignment]
 
-    run()
+    _ensure_registry_loadable()
+    server = build_server()
+
+    if transport == "stdio":
+        server.run()
+    elif transport == "streamable-http":
+        server.run(transport="streamable-http", host=host, port=port, path=path)
+    else:  # sse
+        server.run(transport="sse", host=host, port=port, path=path)
 
 
-def _default_name_for(path: Path) -> str:
+def _default_name_for(p: Path) -> str:
     """Derive a default cairn name from a directory path."""
-    base = path.name
+    base = p.name
     if base.endswith("-cairn"):
         base = base[: -len("-cairn")]
-    # Normalize to kebab-case
     import re
     base = re.sub(r"[^a-z0-9-]+", "-", base.lower()).strip("-")
     return base or "cairn"

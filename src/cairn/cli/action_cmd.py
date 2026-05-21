@@ -13,7 +13,7 @@ from ..git_ops import commit, get_user_identity
 from ..ids import next_id
 from ..io.state_io import load_state, write_actions
 from ..schemas import ActionItem
-from ._common import resolve_or_exit
+from ._common import RemoteTarget, resolve_target
 
 app = typer.Typer(no_args_is_help=True, help="Manage action items.")
 
@@ -39,7 +39,15 @@ def add(
     ),
 ) -> None:
     """Add an action item to ``state/action_items.yaml``."""
-    paths = resolve_or_exit()
+    target = resolve_target()
+
+    # --- Remote-MCP dispatch (US-P-13) ---------------------------------------
+    if isinstance(target, RemoteTarget):
+        _add_remote(target, assignee=assignee, text=text, due_date=due_date, related=related)
+        return
+
+    # --- Local dispatch ------------------------------------------------------
+    paths = target
     state = load_state(paths)
 
     if assignee not in state.collaborator_ids():
@@ -106,18 +114,26 @@ def complete(
     ),
 ) -> None:
     """Mark an action item complete; status, completed_at, and completed_by are recorded."""
-    paths = resolve_or_exit()
+    target = resolve_target()
+
+    # --- Remote-MCP dispatch (US-P-13) ---------------------------------------
+    if isinstance(target, RemoteTarget):
+        _complete_remote(target, action_id=action_id, by=by)
+        return
+
+    # --- Local dispatch ------------------------------------------------------
+    paths = target
     state = load_state(paths)
 
-    target = next((a for a in state.actions if a.id == action_id), None)
-    if target is None:
+    item = next((a for a in state.actions if a.id == action_id), None)
+    if item is None:
         typer.echo(f"error: no action item with id '{action_id}'", err=True)
         raise typer.Exit(code=1)
-    if target.status == "complete":
+    if item.status == "complete":
         typer.echo(f"error: {action_id} is already complete (no-op)", err=True)
         raise typer.Exit(code=1)
 
-    completed_by = by or target.assignee
+    completed_by = by or item.assignee
     if completed_by not in state.collaborator_ids():
         typer.echo(
             f"error: completer '{completed_by}' is not a known collaborator",
@@ -126,7 +142,7 @@ def complete(
         raise typer.Exit(code=1)
 
     now = datetime.now(timezone.utc).replace(microsecond=0)
-    updated = target.model_copy(
+    updated = item.model_copy(
         update={"status": "complete", "completed_at": now, "completed_by": completed_by}
     )
     actions = [updated if a.id == action_id else a for a in state.actions]
@@ -145,3 +161,84 @@ def complete(
         raise typer.Exit(code=1) from None
 
     typer.echo(f"Completed {action_id}.")
+
+
+def _add_remote(
+    target: RemoteTarget,
+    *,
+    assignee: str,
+    text: str,
+    due_date: str | None,
+    related: list[str],
+) -> None:
+    from ..credentials import missing_token_hint
+    from ..mcp.remote import RemoteAuthError, RemoteCallError, RemoteNetworkError, call_tool
+
+    if target.token is None:
+        typer.echo(f"error: {missing_token_hint(target.endpoint)}", err=True)
+        raise typer.Exit(code=1)
+
+    args: dict = {
+        "text": text,
+        "assignee": assignee,
+        "cairn": target.cairn_name,
+    }
+    if due_date:
+        args["due_date"] = due_date
+    if related:
+        args["related"] = related
+
+    try:
+        result = call_tool(target.endpoint, "add_action", args, token=target.token)
+    except RemoteAuthError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    except RemoteNetworkError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    except RemoteCallError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+
+    resolved_cairn = result.get("cairn", target.cairn_name)
+    new_id = result.get("id", "?")
+    typer.echo(f"Added {new_id} in cairn '{resolved_cairn}' at {target.endpoint}.")
+
+
+def _complete_remote(
+    target: RemoteTarget,
+    *,
+    action_id: str,
+    by: str | None,
+) -> None:
+    from ..credentials import missing_token_hint
+    from ..mcp.remote import RemoteAuthError, RemoteCallError, RemoteNetworkError, call_tool
+
+    if target.token is None:
+        typer.echo(f"error: {missing_token_hint(target.endpoint)}", err=True)
+        raise typer.Exit(code=1)
+
+    args: dict = {
+        "id": action_id,
+        "cairn": target.cairn_name,
+    }
+    if by:
+        args["by"] = by
+
+    try:
+        result = call_tool(target.endpoint, "complete_action", args, token=target.token)
+    except RemoteAuthError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    except RemoteNetworkError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    except RemoteCallError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+
+    resolved_cairn = result.get("cairn", target.cairn_name)
+    completed_id = result.get("id", action_id)
+    typer.echo(
+        f"Completed {completed_id} in cairn '{resolved_cairn}' at {target.endpoint}."
+    )
