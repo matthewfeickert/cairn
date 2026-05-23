@@ -13,7 +13,7 @@ from ..git_ops import commit, get_user_identity
 from ..ids import next_id
 from ..io.state_io import load_state, write_decisions
 from ..schemas import Decision
-from ._common import resolve_or_exit
+from ._common import RemoteTarget, resolve_target
 
 app = typer.Typer(no_args_is_help=True, help="Manage decisions.")
 
@@ -33,7 +33,16 @@ def add(
     ),
 ) -> None:
     """Record a decision in ``state/decisions.yaml``."""
-    paths = resolve_or_exit()
+    target = resolve_target()
+
+    # --- Remote-MCP dispatch (US-P-13) ---------------------------------------
+    if isinstance(target, RemoteTarget):
+        _add_remote(target, author=author, text=text, context=context,
+                    related=related, supersedes=supersedes)
+        return
+
+    # --- Local dispatch ------------------------------------------------------
+    paths = target
     state = load_state(paths)
 
     if author not in state.collaborator_ids():
@@ -106,3 +115,56 @@ def add(
         raise typer.Exit(code=1) from None
 
     typer.echo(f"Recorded {new_id}.")
+
+
+def _add_remote(
+    target: RemoteTarget,
+    *,
+    author: str,
+    text: str,
+    context: str | None,
+    related: list[str],
+    supersedes: str | None,
+) -> None:
+    """Dispatch `decision add` to a remote MCP server (US-P-13)."""
+    from ..credentials import missing_token_hint
+    from ..mcp.remote import RemoteAuthError, RemoteCallError, RemoteNetworkError, call_tool
+
+    if target.token is None:
+        typer.echo(
+            f"error: {missing_token_hint(target.endpoint)}",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    args: dict = {
+        "author": author,
+        "text": text,
+        "cairn": target.cairn_name,
+    }
+    if context:
+        args["context"] = context
+    if related:
+        args["related"] = related
+    if supersedes:
+        args["supersedes"] = supersedes
+
+    try:
+        result = call_tool(target.endpoint, "add_decision", args, token=target.token)
+    except RemoteAuthError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    except RemoteNetworkError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    except RemoteCallError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+
+    # m13v fix: echo resolved cairn + new ID so the user can confirm the write
+    # landed on the right cairn (guards against a wrong `name` in cairn.toml).
+    resolved_cairn = result.get("cairn", target.cairn_name)
+    new_id = result.get("id", "?")
+    typer.echo(
+        f"Recorded {new_id} in cairn '{resolved_cairn}' at {target.endpoint}."
+    )

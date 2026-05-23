@@ -1,15 +1,21 @@
-"""Project-repo `cairn.toml` pointer file (Stage 2 / ADR-0006 + ADR-0010).
+"""Project-repo `cairn.toml` pointer file (ADR-0006 + ADR-0010 + ADR-0012).
 
-A project repo paired with a cairn carries a `cairn.toml` at its root:
+A project repo paired with a cairn carries a `cairn.toml` at its root.
+Three modes (per ADR-0012):
 
-    [cairn]
-    name = "stellaforge"           # registered name (preferred)
-    # path = "../stellaforge-cairn"  # OR a local path (fallback)
-    # endpoint = "stdio:cairn mcp"   # OR an MCP endpoint URL (future)
+  local-path      path = "../stellaforge-cairn"
+  local-registry  name = "stellaforge"
+  remote-mcp      endpoint = "https://mcp.example.com/mcp"
+                  name = "stellaforge"   # cairn handle on the remote server
 
-Exactly one of ``name``, ``path``, or ``endpoint`` is required. ``name`` is
-the canonical form going forward (resolves against the user's MCP registry);
-``path`` is a useful fallback when the user hasn't set up an MCP server.
+``path`` alone → local-path mode (filesystem path, relative to the cairn.toml).
+``name`` alone → local-registry mode (resolves via ~/.config/cairn/server.toml).
+``endpoint + name`` → remote-MCP mode (HTTP MCP server; name is the cairn handle).
+
+Invalid combinations (rejected with an actionable error):
+- empty (none of the above)
+- ``path + name``, ``path + endpoint``, or all three
+- ``endpoint`` without ``name``
 """
 
 from __future__ import annotations
@@ -33,7 +39,13 @@ class CairnTomlError(CairnError):
 
 @dataclass(frozen=True)
 class CairnPointer:
-    """Parsed contents of a project-repo's ``cairn.toml`` pointer file."""
+    """Parsed contents of a project-repo's ``cairn.toml`` pointer file.
+
+    Mode is determined by which fields are set:
+    - local-path:     path set, name/endpoint None
+    - local-registry: name set, path/endpoint None
+    - remote-mcp:     endpoint + name both set, path None
+    """
 
     name: str | None
     path: Path | None
@@ -44,6 +56,11 @@ class CairnPointer:
     def project_repo_root(self) -> Path:
         """The project repo's root (the directory containing the cairn.toml)."""
         return self.source.parent
+
+    @property
+    def is_remote(self) -> bool:
+        """True when this pointer is in remote-MCP mode (endpoint + name)."""
+        return self.endpoint is not None and self.name is not None
 
 
 def find_pointer(start: Path) -> Path | None:
@@ -81,16 +98,24 @@ def load_pointer(path: Path) -> CairnPointer:
     if endpoint is not None and not isinstance(endpoint, str):
         raise CairnTomlError(f"{path}: [cairn].endpoint must be a string")
 
-    present = sum(1 for v in (name, raw_path, endpoint) if v is not None)
-    if present == 0:
+    # Validate the mode combination.
+    # Valid: path alone | name alone | endpoint+name together.
+    # Invalid: empty; path+name; path+endpoint; endpoint alone; all three.
+    if raw_path is not None and (name is not None or endpoint is not None):
         raise CairnTomlError(
-            f"{path}: [cairn] table must specify exactly one of "
-            f"`name`, `path`, or `endpoint`"
+            f"{path}: [cairn].path cannot be combined with `name` or `endpoint`. "
+            f"Use `name` for local-registry mode, or `endpoint + name` for remote-MCP mode."
         )
-    if present > 1:
+    if endpoint is not None and name is None:
         raise CairnTomlError(
-            f"{path}: [cairn] table must specify exactly one of "
-            f"`name`, `path`, or `endpoint` (found {present})"
+            f"{path}: [cairn].endpoint requires `name` (the cairn handle on the remote server). "
+            f"Add `name = \"<handle>\"` to the [cairn] table."
+        )
+    if raw_path is None and name is None and endpoint is None:
+        raise CairnTomlError(
+            f"{path}: [cairn] table must specify one of: "
+            f"`path` (local-path), `name` (local-registry), "
+            f"or `endpoint + name` (remote-MCP)."
         )
 
     resolved_path: Path | None = None
@@ -119,14 +144,22 @@ def write_pointer(
 ) -> Path:
     """Write a ``cairn.toml`` at ``project_repo``'s root.
 
-    Exactly one of name/path/endpoint must be provided. Returns the
-    absolute path to the written file.
+    Valid combinations:
+    - ``path`` alone → local-path mode
+    - ``name`` alone → local-registry mode
+    - ``endpoint + name`` → remote-MCP mode
+
+    Returns the absolute path to the written file.
     """
-    present = sum(1 for v in (name, path, endpoint) if v is not None)
-    if present != 1:
+    # Validate the combination.
+    if path is not None and (name is not None or endpoint is not None):
+        raise CairnTomlError("write_pointer: path cannot be combined with name or endpoint")
+    if endpoint is not None and name is None:
         raise CairnTomlError(
-            "write_pointer requires exactly one of name/path/endpoint"
+            "write_pointer: endpoint requires name (cairn handle on the remote server)"
         )
+    if path is None and name is None and endpoint is None:
+        raise CairnTomlError("write_pointer requires one of: path, name, or endpoint+name")
 
     if not project_repo.is_dir():
         raise CairnTomlError(f"project repo path is not a directory: {project_repo}")
@@ -139,9 +172,7 @@ def write_pointer(
         "",
         "[cairn]",
     ]
-    if name is not None:
-        lines.append(f'name = "{name}"')
-    elif path is not None:
+    if path is not None:
         # Prefer a path relative to the project repo when possible, for portability.
         try:
             rel = path.resolve().relative_to(project_repo.resolve())
@@ -166,7 +197,6 @@ def write_pointer(
                             common_len += 1
                         else:
                             break
-                    ups = ["..."] * (len(pr_parts) - common_len)
                     ups = [".."] * (len(pr_parts) - common_len)
                     downs = list(pa_parts[common_len:])
                     path_str = "/".join(ups + downs)
@@ -177,10 +207,18 @@ def write_pointer(
         # TOML basic-string escaping
         path_str = path_str.replace("\\", "\\\\").replace('"', '\\"')
         lines.append(f'path = "{path_str}"')
-    else:
-        assert endpoint is not None
+    elif endpoint is not None:
+        # remote-MCP mode: endpoint + name
+        assert name is not None
         endpoint_esc = endpoint.replace("\\", "\\\\").replace('"', '\\"')
+        name_esc = name.replace("\\", "\\\\").replace('"', '\\"')
         lines.append(f'endpoint = "{endpoint_esc}"')
+        lines.append(f'name = "{name_esc}"')
+    else:
+        # local-registry mode: name only
+        assert name is not None
+        name_esc = name.replace("\\", "\\\\").replace('"', '\\"')
+        lines.append(f'name = "{name_esc}"')
 
     lines.append("")
     target.write_text("\n".join(lines), encoding="utf-8")

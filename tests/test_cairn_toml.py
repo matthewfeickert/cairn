@@ -23,6 +23,7 @@ def test_write_and_load_name_pointer(tmp_path: Path):
     assert pointer.name == "demo"
     assert pointer.path is None
     assert pointer.endpoint is None
+    assert not pointer.is_remote
 
 
 def test_write_and_load_path_pointer_relative(tmp_path: Path):
@@ -34,36 +35,86 @@ def test_write_and_load_path_pointer_relative(tmp_path: Path):
     pointer = load_pointer(written)
     assert pointer.name is None
     assert pointer.path == cairn.resolve()
+    assert pointer.endpoint is None
     # Confirm the on-disk content uses a relative path for portability.
     content = written.read_text()
     assert "../proj-cairn" in content
+    assert not pointer.is_remote
 
 
-def test_write_and_load_endpoint_pointer(tmp_path: Path):
+def test_write_and_load_remote_mcp_pointer(tmp_path: Path):
+    """endpoint + name together → remote-MCP mode."""
     project = tmp_path / "proj"
     project.mkdir()
-    written = write_pointer(project, endpoint="stdio:cairn mcp")
+    written = write_pointer(
+        project,
+        endpoint="https://mcp.example.com/mcp",
+        name="my-cairn",
+    )
+    assert written.is_file()
     pointer = load_pointer(written)
-    assert pointer.endpoint == "stdio:cairn mcp"
-    assert pointer.name is None
+    assert pointer.endpoint == "https://mcp.example.com/mcp"
+    assert pointer.name == "my-cairn"
     assert pointer.path is None
+    assert pointer.is_remote
+    # Both fields should appear in the file.
+    content = written.read_text()
+    assert 'endpoint = "https://mcp.example.com/mcp"' in content
+    assert 'name = "my-cairn"' in content
 
 
-def test_write_requires_exactly_one_target(tmp_path: Path):
-    project = tmp_path / "proj"
-    project.mkdir()
-    with pytest.raises(CairnTomlError, match="exactly one"):
-        write_pointer(project)  # nothing
-    with pytest.raises(CairnTomlError, match="exactly one"):
-        write_pointer(project, name="demo", endpoint="x")
-
-
-def test_load_rejects_multiple_targets(tmp_path: Path):
+def test_load_remote_mcp_pointer(tmp_path: Path):
+    """Loading a hand-written remote-MCP cairn.toml."""
     target = tmp_path / "cairn.toml"
     target.write_text(
-        "[cairn]\nname = \"demo\"\nendpoint = \"x\"\n", encoding="utf-8"
+        '[cairn]\nendpoint = "https://mcp.example.com/mcp"\nname = "my-cairn"\n',
+        encoding="utf-8",
     )
-    with pytest.raises(CairnTomlError, match="exactly one"):
+    pointer = load_pointer(target)
+    assert pointer.endpoint == "https://mcp.example.com/mcp"
+    assert pointer.name == "my-cairn"
+    assert pointer.is_remote
+
+
+def test_write_requires_valid_combination(tmp_path: Path):
+    project = tmp_path / "proj"
+    project.mkdir()
+    # Nothing → error
+    with pytest.raises(CairnTomlError, match="one of"):
+        write_pointer(project)
+    # path + name → error
+    with pytest.raises(CairnTomlError, match="cannot be combined"):
+        write_pointer(project, path=tmp_path, name="demo")
+    # path + endpoint → error
+    with pytest.raises(CairnTomlError, match="cannot be combined"):
+        write_pointer(project, path=tmp_path, endpoint="https://x.test/mcp")
+    # endpoint alone → error
+    with pytest.raises(CairnTomlError, match="requires name"):
+        write_pointer(project, endpoint="https://x.test/mcp")
+
+
+def test_load_rejects_endpoint_without_name(tmp_path: Path):
+    target = tmp_path / "cairn.toml"
+    target.write_text(
+        '[cairn]\nendpoint = "https://mcp.example.com/mcp"\n', encoding="utf-8"
+    )
+    with pytest.raises(CairnTomlError, match=r"requires.*name"):
+        load_pointer(target)
+
+
+def test_load_rejects_path_with_name(tmp_path: Path):
+    target = tmp_path / "cairn.toml"
+    target.write_text(
+        '[cairn]\npath = "../cairn"\nname = "demo"\n', encoding="utf-8"
+    )
+    with pytest.raises(CairnTomlError, match="cannot be combined"):
+        load_pointer(target)
+
+
+def test_load_rejects_empty_table(tmp_path: Path):
+    target = tmp_path / "cairn.toml"
+    target.write_text("[cairn]\n", encoding="utf-8")
+    with pytest.raises(CairnTomlError, match="must specify"):
         load_pointer(target)
 
 
@@ -103,3 +154,19 @@ def test_pointer_project_repo_root(tmp_path: Path):
     written = write_pointer(proj, name="demo")
     pointer = load_pointer(written)
     assert pointer.project_repo_root == proj.resolve()
+
+
+def test_is_remote_false_for_local_modes(tmp_path: Path):
+    """CairnPointer.is_remote is False for both local modes."""
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    cairn = tmp_path / "cairn"
+    cairn.mkdir()
+
+    name_ptr = load_pointer(write_pointer(proj, name="demo"))
+    assert not name_ptr.is_remote
+
+    # Overwrite for the path test
+    (proj / "cairn.toml").unlink()
+    path_ptr = load_pointer(write_pointer(proj, path=cairn))
+    assert not path_ptr.is_remote

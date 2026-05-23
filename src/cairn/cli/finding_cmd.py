@@ -15,7 +15,7 @@ from ..git_ops import commit, get_user_identity
 from ..io.frontmatter import write as write_frontmatter
 from ..io.state_io import load_state
 from ..schemas import FindingFrontmatter
-from ._common import resolve_or_exit
+from ._common import RemoteTarget, resolve_target
 
 app = typer.Typer(no_args_is_help=True, help="Log findings under knowledge/findings/.")
 
@@ -61,7 +61,28 @@ def add(
     ),
 ) -> None:
     """Write ``knowledge/findings/YYYY-MM-DD-<slug>.md`` with YAML frontmatter."""
-    paths = resolve_or_exit()
+    target = resolve_target()
+
+    # --- Remote-MCP dispatch (US-P-13) ---------------------------------------
+    if isinstance(target, RemoteTarget):
+        if no_commit:
+            typer.echo(
+                "error: --no-commit is not supported in remote-MCP mode.", err=True
+            )
+            raise typer.Exit(code=1)
+        _add_remote(
+            target,
+            author=author,
+            title=title,
+            slug=slug,
+            related=related,
+            body=body,
+            body_from=body_from,
+        )
+        return
+
+    # --- Local dispatch ------------------------------------------------------
+    paths = target
     state = load_state(paths)
 
     if author not in state.collaborator_ids():
@@ -101,10 +122,10 @@ def add(
     now = datetime.now(timezone.utc).replace(microsecond=0)
     date_str = now.date().isoformat()
     filename = f"{date_str}-{final_slug}.md"
-    target = paths.findings / filename
-    if target.exists():
+    target_file = paths.findings / filename
+    if target_file.exists():
         typer.echo(
-            f"error: {target.relative_to(paths.root)} already exists. "
+            f"error: {target_file.relative_to(paths.root)} already exists. "
             f"Pick a different slug.",
             err=True,
         )
@@ -128,8 +149,6 @@ def add(
         typer.echo(f"error: schema validation failed:\n{exc}", err=True)
         raise typer.Exit(code=1) from None
 
-    # Substrate-as-truth: keep optional fields visible so the schema is
-    # self-documenting in the frontmatter. Empty/absent values render as null.
     fm = validated.model_dump(mode="json", exclude_none=False)
     body_to_write = (
         body_text.rstrip("\n") + "\n"
@@ -137,19 +156,19 @@ def add(
         else f"# {title}\n\nTODO: write up the finding.\n"
     )
     try:
-        write_frontmatter(target, fm, body_to_write)
+        write_frontmatter(target_file, fm, body_to_write)
     except OSError as exc:
         typer.echo(f"error: could not write finding file: {exc}", err=True)
         raise typer.Exit(code=1) from None
 
     if no_commit:
-        typer.echo(f"Wrote {target.relative_to(paths.root)} (not committed; --no-commit).")
+        typer.echo(f"Wrote {target_file.relative_to(paths.root)} (not committed; --no-commit).")
         return
 
     try:
         commit(
             repo,
-            [target],
+            [target_file],
             message=f"Log finding: {title[:60]}",
             author=get_user_identity(repo),
         )
@@ -157,4 +176,63 @@ def add(
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from None
 
-    typer.echo(f"Logged finding at {target.relative_to(paths.root)}.")
+    typer.echo(f"Logged finding at {target_file.relative_to(paths.root)}.")
+
+
+def _add_remote(
+    target: RemoteTarget,
+    *,
+    author: str,
+    title: str,
+    slug: str | None,
+    related: list[str],
+    body: str | None,
+    body_from: Path | None,
+) -> None:
+    from ..credentials import missing_token_hint
+    from ..mcp.remote import RemoteAuthError, RemoteCallError, RemoteNetworkError, call_tool
+
+    if target.token is None:
+        typer.echo(f"error: {missing_token_hint(target.endpoint)}", err=True)
+        raise typer.Exit(code=1)
+
+    if body is not None and body_from is not None:
+        typer.echo("error: --body and --body-from are mutually exclusive", err=True)
+        raise typer.Exit(code=1)
+    body_text = body
+    if body_from is not None:
+        try:
+            body_text = body_from.read_text(encoding="utf-8")
+        except OSError as exc:
+            typer.echo(f"error: could not read --body-from: {exc}", err=True)
+            raise typer.Exit(code=1) from None
+
+    args: dict = {
+        "author": author,
+        "title": title,
+        "cairn": target.cairn_name,
+    }
+    if slug:
+        args["slug"] = slug
+    if related:
+        args["related"] = related
+    if body_text:
+        args["body"] = body_text
+
+    try:
+        result = call_tool(target.endpoint, "add_finding", args, token=target.token)
+    except RemoteAuthError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    except RemoteNetworkError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+    except RemoteCallError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from None
+
+    resolved_cairn = result.get("cairn", target.cairn_name)
+    path_out = result.get("path", "?")
+    typer.echo(
+        f"Logged finding at {path_out} in cairn '{resolved_cairn}' at {target.endpoint}."
+    )
